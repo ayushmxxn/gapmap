@@ -61,6 +61,33 @@ export function getCategory(id: string): Category | undefined {
   return CATEGORIES.find((c) => c.id === id);
 }
 
+export function resolveCategory(idOrQuery: string): Category {
+  const trimmed = idOrQuery.trim();
+  if (!trimmed) {
+    return CATEGORIES[0];
+  }
+  const existing = CATEGORIES.find(
+    (c) =>
+      c.id.toLowerCase() === trimmed.toLowerCase() ||
+      c.label.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (existing) return existing;
+
+  const normalized = trimmed.replace(/[-_]+/g, " ");
+  const label = normalized
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+
+  return {
+    id: normalized.toLowerCase().replace(/\s+/g, "-"),
+    label,
+    mapsQuery: normalized.toLowerCase(),
+    trendsQuery: normalized.toLowerCase(),
+    siblings: [],
+  };
+}
+
 /** Preset Indian demo areas. Coordinates are public neighbourhood centroids. */
 export interface AreaPreset {
   id: string;

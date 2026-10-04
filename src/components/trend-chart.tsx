@@ -11,44 +11,51 @@ import {
 import type { ScanResult } from "@/lib/scoring";
 
 export function TrendChart({ trend }: { trend: ScanResult["trend"] }) {
-  if (!trend) {
+  if (!trend || trend.points.length === 0) {
     return (
-      <section className="rounded-xl border border-dashed border-border p-5">
-        <h2 className="font-semibold">Search interest</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          No trend data was returned for this scan. The Gap Signal above was
-          computed from Maps and review evidence only.
-        </p>
-      </section>
+      <div className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+        No search trend data was available for this category.
+      </div>
     );
   }
+
+  const directionText =
+    trend.slopeScore > 55
+      ? "steadily rising over the past year"
+      : trend.slopeScore < 45
+        ? "softening over the past year"
+        : "holding steady over the past year";
+
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-semibold">Search interest</h2>
-        <p className="rounded-full bg-muted px-3 py-1 font-mono text-xs text-muted-foreground">
-          {trend.scopeLabel} · {trend.evidence}
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className="text-sm font-medium text-foreground">
+          Search interest is {directionText}.
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+          Google search trends over the past 12 months show relative customer interest and demand trajectory.
         </p>
       </div>
-      <div className="mt-4 h-48 w-full">
+
+      <div className="h-48 w-full rounded-xl border border-border bg-card p-3">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={trend.points}>
+          <LineChart data={trend.points} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
             <XAxis
               dataKey="date"
               tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-              minTickGap={24}
+              minTickGap={20}
               axisLine={{ stroke: "var(--border)" }}
               tickLine={false}
             />
             <YAxis
               domain={[0, 100]}
               tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-              width={32}
+              width={36}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
-              formatter={(value) => [`${value}/100`, "Interest"]}
+              formatter={(value) => [`${value}/100`, "Interest index"]}
               labelClassName="text-xs"
               contentStyle={{
                 background: "var(--popover)",
@@ -61,17 +68,13 @@ export function TrendChart({ trend }: { trend: ScanResult["trend"] }) {
             <Line
               type="monotone"
               dataKey="value"
-              stroke="var(--primary)"
+              stroke="var(--foreground)"
               strokeWidth={2}
               dot={false}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Avg {trend.avgLevel}/100 · momentum {trend.slopeScore}/100 · relative
-        interest, not absolute searches.
-      </p>
-    </section>
+    </div>
   );
 }

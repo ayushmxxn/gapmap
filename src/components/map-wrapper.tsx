@@ -17,12 +17,14 @@ const DynamicMap = dynamic(
 
 export function MapWrapper({
   competitors,
+  mode = "globe",
 }: {
   competitors: Competitor[];
+  mode?: "globe" | "local";
 }) {
   return (
     <div className="h-full min-h-80 overflow-hidden rounded-xl border border-border">
-      <DynamicMap competitors={competitors} />
+      <DynamicMap competitors={competitors} mode={mode} />
     </div>
   );
 }

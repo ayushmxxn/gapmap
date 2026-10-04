@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
   title: "GapMap",
-  description: "Find what's missing.",
+  description: "See where a business could work before you open one.",
 };
 
 export default function RootLayout({

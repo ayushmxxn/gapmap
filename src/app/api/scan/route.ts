@@ -7,7 +7,7 @@ import {
   SerpApiError,
   type MapsPlace,
 } from "@/lib/serpapi";
-import { getCategory } from "@/lib/categories";
+import { resolveCategory } from "@/lib/categories";
 import {
   SCAN_RADIUS_KM,
   densityPerKm2,
@@ -141,10 +141,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid scan input." }, { status: 400 });
   }
   const { lat, lng, categoryId, areaLabel } = parsedInput.data;
-  const category = getCategory(categoryId);
-  if (!category) {
-    return NextResponse.json({ error: "Unknown category." }, { status: 400 });
-  }
+  const category = resolveCategory(categoryId);
 
   const hasKey = serverEnv.SERPAPI_KEY.length > 0;
   if (!hasKey) {

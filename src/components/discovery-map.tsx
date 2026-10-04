@@ -19,6 +19,8 @@ import { AREA_PRESETS } from "@/lib/categories";
 import { useAppStore } from "@/store/app";
 import type { Competitor } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
+import { formatReviewCount } from "@/lib/result-utils";
+import { reverseGeocode } from "@/lib/mapbox-geocoding";
 
 type Projection = "globe" | "mercator";
 
@@ -65,10 +67,13 @@ const SATELLITE_CONFIG: [string, unknown][] = [
 
 export function DiscoveryMap({
   competitors,
+  mode = "globe",
 }: {
   competitors: Competitor[];
+  mode?: "globe" | "local";
 }) {
-  const { lat, lng, areaLabel, setArea } = useAppStore();
+  const isLocal = mode === "local";
+  const { lat, lng, setArea } = useAppStore();
   const { resolvedTheme } = useTheme();
   const mounted = React.useSyncExternalStore(
     () => () => {},
@@ -76,17 +81,23 @@ export function DiscoveryMap({
     () => false,
   );
   const mapRef = React.useRef<MapRef>(null);
-  const projRef = React.useRef<Projection>("globe");
-  const [projection, setProjectionState] = React.useState<Projection>("globe");
+  const [globeProjection, setGlobeProjection] = React.useState<Projection>("globe");
+  const projection = isLocal ? "mercator" : globeProjection;
+  const projRef = React.useRef<Projection>(projection);
+
+  React.useEffect(() => {
+    projRef.current = projection;
+  }, [projection]);
+
   const [selected, setSelected] = React.useState<Competitor | null>(null);
-  const spinRef = React.useRef(true);
+  const spinRef = React.useRef(!isLocal);
   const resumeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstArea = React.useRef(true);
 
   const isDark = mounted && resolvedTheme === "dark";
   /* Satellite Earth for globe discovery; detailed streets for local analysis. */
   const mapStyle =
-    projection === "globe"
+    !isLocal && projection === "globe"
       ? MAPBOX_SATELLITE
       : isDark
         ? MAPBOX_STYLE_DARK
@@ -209,6 +220,18 @@ export function DiscoveryMap({
 
   /* Fly globe → country → city → neighbourhood when an area is chosen. */
   React.useEffect(() => {
+    if (isLocal) {
+      const map = mapRef.current?.getMap() as unknown as
+        | { flyTo: (opts: Record<string, unknown>) => void }
+        | undefined;
+      map?.flyTo({
+        center: [lng, lat],
+        zoom: 13.5,
+        duration: 1500,
+        essential: true,
+      });
+      return;
+    }
     if (firstArea.current) {
       firstArea.current = false;
       return;
@@ -224,7 +247,7 @@ export function DiscoveryMap({
       curve: 1.42,
       essential: true,
     });
-  }, [lat, lng]);
+  }, [lat, lng, isLocal]);
 
   React.useEffect(
     () => () => {
@@ -249,9 +272,9 @@ export function DiscoveryMap({
         ref={mapRef}
         mapboxAccessToken={getMapboxToken()}
         initialViewState={{
-          longitude: INDIA_CENTER[0],
-          latitude: INDIA_CENTER[1],
-          zoom: GLOBE_ZOOM,
+          longitude: isLocal ? lng : INDIA_CENTER[0],
+          latitude: isLocal ? lat : INDIA_CENTER[1],
+          zoom: isLocal ? 13.5 : GLOBE_ZOOM,
         }}
         style={{ width: "100%", height: "100%", minHeight: 320 }}
         mapStyle={mapStyle}
@@ -260,24 +283,24 @@ export function DiscoveryMap({
         onTouchStart={pauseSpin}
         onWheel={pauseSpin}
         onMove={(e) => {
+          if (isLocal) return;
           const z = e.target.getZoom();
           const map = e.target as unknown as GlobeCapableMap;
           if (z >= FLAT_ZOOM && projRef.current !== "mercator") {
             projRef.current = "mercator";
-            setProjectionState("mercator");
+            setGlobeProjection("mercator");
             map.setProjection?.("mercator");
           } else if (z <= ROUND_ZOOM && projRef.current !== "globe") {
             projRef.current = "globe";
-            setProjectionState("globe");
+            setGlobeProjection("globe");
             map.setProjection?.("globe");
           }
         }}
-        onClick={(e) => {
-          setArea(
-            Number(e.lngLat.lat.toFixed(4)),
-            Number(e.lngLat.lng.toFixed(4)),
-            `Custom pin ${e.lngLat.lat.toFixed(2)}, ${e.lngLat.lng.toFixed(2)}`,
-          );
+        onClick={async (e) => {
+          const clickLat = Number(e.lngLat.lat.toFixed(4));
+          const clickLng = Number(e.lngLat.lng.toFixed(4));
+          const label = await reverseGeocode(clickLat, clickLng);
+          setArea(clickLat, clickLng, label);
         }}
       >
         <Source id="scan-radius" type="geojson" data={radiusGeoJson}>
@@ -293,7 +316,8 @@ export function DiscoveryMap({
           />
         </Source>
 
-        {projection === "globe" &&
+        {!isLocal &&
+          projection === "globe" &&
           AREA_PRESETS.map((p) => (
             <Marker
               key={p.id}
@@ -352,38 +376,42 @@ export function DiscoveryMap({
           <Popup
             longitude={selected.lng}
             latitude={selected.lat}
-            offset={14}
-            maxWidth="260px"
+            offset={12}
+            maxWidth="240px"
             className="gapmap-popup"
             onClose={() => setSelected(null)}
           >
-            <p className="text-[15px] leading-[20px] font-semibold tracking-[-0.01em]">
-              {selected.title.split("|")[0]?.trim() ?? selected.title}
-            </p>
-            <p className="mt-0.5 text-sm leading-[20px]">
-              <span
-                className="font-semibold"
-                style={{ color: pinColor(selected.rating) }}
-              >
-                {selected.rating != null
-                  ? `${selected.rating.toFixed(1)} ★`
-                  : "Unrated"}
-              </span>
-              {selected.reviews != null && (
-                <span className="font-normal text-muted-foreground">
-                  {" "}
-                  · {selected.reviews.toLocaleString("en-IN")} reviews
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm font-semibold tracking-tight text-foreground truncate">
+                {selected.title.split("|")[0]?.trim() ?? selected.title}
+              </p>
+              <p className="text-xs">
+                <span
+                  className="font-medium"
+                  style={{ color: pinColor(selected.rating) }}
+                >
+                  {selected.rating != null
+                    ? `${selected.rating.toFixed(1)}★`
+                    : "Unrated"}
                 </span>
+                {selected.reviews != null && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {formatReviewCount(selected.reviews)} reviews
+                  </span>
+                )}
+              </p>
+              {selected.address && (
+                <p className="text-[11px] text-muted-foreground line-clamp-1">
+                  {selected.address}
+                </p>
               )}
-            </p>
-            <p className="mt-0.5 text-[13px] leading-[18px] font-normal text-muted-foreground">
-              {areaLabel}
-            </p>
+            </div>
           </Popup>
         )}
       </Map>
 
-      {projection === "mercator" && (
+      {!isLocal && projection === "mercator" && (
         <button
           type="button"
           onClick={() => {
