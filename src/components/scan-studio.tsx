@@ -9,8 +9,7 @@ import { UnifiedSearch } from "@/components/unified-search";
 import { AREA_PRESETS, resolveCategory } from "@/lib/categories";
 import { postScan, scanUrl } from "@/lib/scan-client";
 import { useAppStore } from "@/store/app";
-import { Search01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
@@ -111,7 +110,7 @@ export function ScanStudio() {
 
   return (
     <div className="flex min-h-screen min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b border-black/[0.06] dark:border-white/[0.08] bg-white/95 dark:bg-card/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] transition-colors">
+      <header className="sticky top-0 z-10 bg-white/95 dark:bg-card/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] transition-colors">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -124,11 +123,17 @@ export function ScanStudio() {
                   window.history.replaceState(null, "", "/");
                 }
               }}
-              className="flex items-center gap-2.5 text-left cursor-pointer transition-opacity hover:opacity-85 shrink-0"
+              className="group flex items-center gap-2.5 text-left cursor-pointer transition-opacity hover:opacity-90 shrink-0"
             >
-              <span className="flex size-7.5 items-center justify-center rounded-[9px] border border-black/[0.06] dark:border-white/10 bg-[#F2F2F3] dark:bg-muted text-foreground">
-                <HugeiconsIcon icon={Search01Icon} size={15} strokeWidth={2} />
-              </span>
+              <Image
+                src="/logo.png"
+                alt="GapMap"
+                width={36}
+                height={22}
+                className="h-5.5 w-auto object-contain select-none transition-transform group-hover:scale-105"
+                priority
+                unoptimized
+              />
               <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#111827] dark:text-foreground">
                 GapMap
               </span>
@@ -174,11 +179,9 @@ export function ScanStudio() {
           <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16">
             {/* Left Content Column */}
             <div className="flex w-full max-w-[600px] flex-col justify-center">
-              <h1 className="text-2xl sm:text-[30px] md:text-[32px] lg:text-[34px] xl:text-[35px] font-semibold tracking-[-0.035em] text-foreground leading-[1.18]">
-                <span className="inline lg:whitespace-nowrap">
-                  See where your business could work
-                </span>
-                <br className="hidden sm:inline" />{" "}
+              <h1 className="text-3xl sm:text-[30px] md:text-[32px] lg:text-[34px] xl:text-[48px] font-semibold tracking-[-0.035em] text-foreground leading-[1.18] text-balance">
+                <span>See where your business could work</span>{" "}
+                <br className="hidden sm:inline" />
                 <span>before you open one.</span>
               </h1>
 
