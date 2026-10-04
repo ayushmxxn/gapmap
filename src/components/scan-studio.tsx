@@ -162,6 +162,8 @@ export function ScanStudio() {
                   setStatus("idle");
                   setResult(null);
                   setError(null);
+                  setArea(12.9352, 77.6245, "");
+                  setCategoryId("");
                   window.history.replaceState(null, "", "/");
                 }}
                 className="h-8 px-3 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
@@ -187,6 +189,7 @@ export function ScanStudio() {
 
               <div className="mt-7 sm:mt-9">
                 <UnifiedSearch
+                  key={`${categoryId}-${areaLabel}`}
                   initialCategoryId={categoryId}
                   initialAreaLabel={areaLabel}
                   initialLat={lat}

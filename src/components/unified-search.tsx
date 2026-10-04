@@ -42,32 +42,42 @@ interface UnifiedSearchProps {
 }
 
 export function UnifiedSearch({
-  initialCategoryId = "cafe",
-  initialAreaLabel = "Koramangala, Bengaluru",
-  initialLat = 12.9352,
-  initialLng = 77.6245,
+  initialCategoryId = "",
+  initialAreaLabel = "",
+  initialLat,
+  initialLng,
   onSearch,
   className,
 }: UnifiedSearchProps) {
-  // Construct initial query
-  const defaultCategory = resolveCategory(initialCategoryId);
-  const defaultLocationName = initialAreaLabel.split(",")[0].trim();
-  const defaultInitialQuery = `${defaultCategory.label} in ${defaultLocationName}`;
+  // Construct initial query only if explicit initial values are provided
+  const defaultInitialQuery = React.useMemo(() => {
+    if (!initialCategoryId || !initialAreaLabel) return "";
+    const defaultCategory = resolveCategory(initialCategoryId);
+    const defaultLocationName = initialAreaLabel.split(",")[0].trim();
+    if (!defaultCategory.label || !defaultLocationName) return "";
+    return `${defaultCategory.label} in ${defaultLocationName}`;
+  }, [initialCategoryId, initialAreaLabel]);
 
   const [query, setQuery] = React.useState(defaultInitialQuery);
   const [asyncArea, setAsyncArea] = React.useState<{
     lat: number;
     lng: number;
     areaLabel: string;
-  } | null>(() => ({
-    lat: initialLat,
-    lng: initialLng,
-    areaLabel: initialAreaLabel,
-  }));
+  } | null>(() => {
+    if (initialLat && initialLng && initialAreaLabel) {
+      return {
+        lat: initialLat,
+        lng: initialLng,
+        areaLabel: initialAreaLabel,
+      };
+    }
+    return null;
+  });
 
   const [isResolving, setIsResolving] = React.useState(false);
   const [asyncFailed, setAsyncFailed] = React.useState(false);
   const [asyncError, setAsyncError] = React.useState(false);
+  const [showValidation, setShowValidation] = React.useState(false);
 
   // Location suggestions / ambiguous disambiguation
   const [suggestions, setSuggestions] = React.useState<GeocodingResult[]>([]);
@@ -181,7 +191,11 @@ export function UnifiedSearch({
   // Handle submission
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!isReady || !activeCategory || !resolvedArea) return;
+    if (!isReady || !activeCategory || !resolvedArea) {
+      setShowValidation(true);
+      inputRef.current?.focus();
+      return;
+    }
 
     setIsAutocompleteOpen(false);
     setIsMoreOpen(false);
@@ -277,7 +291,18 @@ export function UnifiedSearch({
 
   // Select a business type (from quick picks or "+ More" modal) while preserving location
   const handleSelectBusiness = (businessLabel: string) => {
+    const isCurrentlySelected =
+      activeCategory !== null &&
+      (activeCategory.id.toLowerCase() === businessLabel.toLowerCase() ||
+        activeCategory.label.toLowerCase() === businessLabel.toLowerCase());
+
     const locText = parsed.locationText.trim();
+
+    if (isCurrentlySelected) {
+      setQuery(locText ? `in ${locText}` : "");
+      return;
+    }
+
     let nextQuery = "";
 
     if (locText) {
@@ -292,6 +317,7 @@ export function UnifiedSearch({
     setQuery(nextQuery);
     setIsAutocompleteOpen(false);
     setIsMoreOpen(false);
+    if (showValidation) setShowValidation(false);
 
     inputRef.current?.focus();
 
@@ -308,6 +334,7 @@ export function UnifiedSearch({
   // Clear query handler
   const handleClear = () => {
     setQuery("");
+    setShowValidation(false);
     setAsyncArea(null);
     setSuggestions([]);
     setIsAutocompleteOpen(false);
@@ -365,6 +392,7 @@ export function UnifiedSearch({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
+            if (showValidation) setShowValidation(false);
             if (isMoreOpen) setIsMoreOpen(false);
           }}
           onFocus={() => {
@@ -373,7 +401,7 @@ export function UnifiedSearch({
             }
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search a business and location…"
+          placeholder="Choose a business type, then add a location."
           autoComplete="off"
           spellCheck={false}
           role="combobox"
@@ -385,7 +413,10 @@ export function UnifiedSearch({
               ? `location-option-${activeSuggestionIndex}`
               : undefined
           }
-          className="h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#18191e] pl-10 pr-10 text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f4f4f6] placeholder:text-[#18181b]/45 dark:placeholder:text-muted-foreground/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),inset_0_2px_4px_0_rgba(0,0,0,0.3)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1b1c22] hover:border-black/[0.09] dark:hover:border-white/[0.12] focus-visible:outline-none focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#1e1f25] focus-visible:border-black/[0.1] dark:focus-visible:border-white/[0.15] focus-visible:ring-2 focus-visible:ring-[#3B82F6]/25 dark:focus-visible:ring-[#3B82F6]/30 focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.3)]"
+          className={cn(
+            "h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#18191e] pl-10 pr-10 text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f4f4f6] placeholder:text-[#18181b]/45 dark:placeholder:text-muted-foreground/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),inset_0_2px_4px_0_rgba(0,0,0,0.3)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1b1c22] hover:border-black/[0.09] dark:hover:border-white/[0.12] focus-visible:outline-none focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#1e1f25] focus-visible:border-black/[0.1] dark:focus-visible:border-white/[0.15] focus-visible:ring-2 focus-visible:ring-[#3B82F6]/25 dark:focus-visible:ring-[#3B82F6]/30 focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.3)]",
+            showValidation && !isReady && "border-amber-500/50 ring-2 ring-amber-500/25 dark:border-amber-400/50 dark:ring-amber-400/25",
+          )}
         />
 
         {query.length > 0 && (
@@ -543,32 +574,53 @@ export function UnifiedSearch({
           </span>
         )}
 
+        {/* Validation prompt when user clicks CTA without entering valid search */}
+        {showValidation && !isResolving && !parsed.businessText && !parsed.locationText && (
+          <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
+            <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
+            <span>Please enter a business and location to find opportunities</span>
+          </div>
+        )}
+
         {/* Needs Location State */}
         {!isResolving &&
           !resolutionFailed &&
           !resolutionError &&
           parsed.businessText &&
           !parsed.locationText && (
-            <span className="text-muted-foreground/80">
-              Add a location to continue (e.g. “in Koramangala” or “Bandra West”)
-            </span>
+            <div
+              className={cn(
+                "flex items-center gap-1.5",
+                showValidation
+                  ? "text-amber-600 dark:text-amber-400 font-medium"
+                  : "text-muted-foreground/80",
+              )}
+            >
+              {showValidation && (
+                <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
+              )}
+              <span>Add a location to continue (e.g. “in Koramangala” or “Bandra West”)</span>
+            </div>
           )}
 
         {/* Needs Business State */}
         {!isResolving &&
           !parsed.businessText &&
           parsed.locationText && (
-            <span className="text-muted-foreground/80">
-              Add a business type to continue (e.g. “Cafe” or “Gym”)
-            </span>
+            <div
+              className={cn(
+                "flex items-center gap-1.5",
+                showValidation
+                  ? "text-amber-600 dark:text-amber-400 font-medium"
+                  : "text-muted-foreground/80",
+              )}
+            >
+              {showValidation && (
+                <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
+              )}
+              <span>Add a business type to continue (e.g. “Cafe” or “Gym”)</span>
+            </div>
           )}
-
-        {/* Empty State */}
-        {!isResolving && !query.trim() && (
-          <span className="text-muted-foreground/60">
-            Type a business and place, or choose a shortcut above
-          </span>
-        )}
       </div>
 
       {/* 5. Primary CTA */}
@@ -576,11 +628,11 @@ export function UnifiedSearch({
         <LiquidMetalButton
           label="Find opportunities"
           type="submit"
-          disabled={!isReady}
+          disabled={false}
           title={
             isReady && activeCategory && resolvedArea
               ? `Find opportunities for ${activeCategory.label} in ${resolvedArea.areaLabel}`
-              : "Enter a business and location to find opportunities"
+              : "Find opportunities"
           }
         />
       </div>
