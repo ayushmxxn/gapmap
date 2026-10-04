@@ -337,7 +337,7 @@ export function DiscoveryMap({
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full min-h-[300px] overflow-hidden"
+      className="relative h-full w-full min-h-0 overflow-hidden"
     >
       {/* 1. Only mount Map once container has measured dimensions */}
       {dimensions && dimensions.width > 0 && dimensions.height > 0 && !mapError ? (
@@ -353,13 +353,44 @@ export function DiscoveryMap({
           }}
           style={{ width: "100%", height: "100%" }}
           mapStyle={mapStyle}
+          cooperativeGestures={false}
+          scrollZoom={true}
+          dragPan={true}
+          dragRotate={true}
+          doubleClickZoom={true}
+          touchZoomRotate={true}
+          touchPitch={true}
+          boxZoom={false}
+          keyboard={true}
           onError={() => setMapError(true)}
           onLoad={() => {
             applySettings(isDark);
             const map = mapRef.current?.getMap();
             if (map) {
-              (map as unknown as { setCooperativeGestures?: (enabled: boolean) => void })
-                .setCooperativeGestures?.(true);
+              const handlers = (
+                map as unknown as {
+                  handlers?: {
+                    _handlersById?: {
+                      mouseRotate?: {
+                        _correctButton?: (e: MouseEvent, button: number) => boolean;
+                      };
+                      mousePitch?: {
+                        _correctButton?: (e: MouseEvent, button: number) => boolean;
+                      };
+                    };
+                  };
+                }
+              ).handlers?._handlersById;
+
+              if (handlers?.mouseRotate) {
+                handlers.mouseRotate._correctButton = (e: MouseEvent, button: number) =>
+                  (button === 0 && (e.ctrlKey || e.shiftKey)) || button === 2;
+              }
+              if (handlers?.mousePitch) {
+                handlers.mousePitch._correctButton = (e: MouseEvent, button: number) =>
+                  (button === 0 && (e.ctrlKey || e.shiftKey)) || button === 2;
+              }
+
               if (!isLocal && !hasInteractedRef.current && dimensions) {
                 const optimalZoom = getOptimalGlobeZoom(
                   dimensions.width,
