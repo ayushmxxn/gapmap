@@ -96,15 +96,22 @@ export function EvidenceSheet({
           {/* 1. Nearby businesses */}
           <section className="flex flex-col gap-2.5">
             <div>
-              <h3 className="font-semibold text-foreground tracking-tight text-sm">Nearby businesses</h3>
+              <h3 className="font-semibold text-foreground tracking-tight text-sm">
+                {result.scope?.type === "city" || result.area.scope === "city"
+                  ? "Discovered businesses"
+                  : "Nearby businesses"}
+              </h3>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Places identified within the scan radius.
+                {result.scope?.type === "city" || result.area.scope === "city"
+                  ? `Places identified across ${result.scope?.cityName || result.area.label}.`
+                  : "Places identified within the scan radius."}
               </p>
             </div>
             <CompetitorsTable
               competitors={result.competitors}
               showAddress={false}
               showSamplingNote={false}
+              scope={result.scope?.type ?? (result.area.scope ?? "neighborhood")}
             />
           </section>
 
@@ -210,6 +217,7 @@ export function EvidenceSheet({
               <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5 space-y-1">
                 <p><strong className="text-foreground">Data provider:</strong> SerpApi (Google Maps, Google Maps Reviews, Google Trends)</p>
                 <p><strong className="text-foreground">Execution mode:</strong> {result.mode}</p>
+                <p><strong className="text-foreground">Scan scope:</strong> {result.scope?.label ?? (result.area.scope === "city" ? "City-wide scan" : "Neighborhood scan (1.5 km)")}</p>
                 <p><strong className="text-foreground">Queries logged:</strong> {result.ledger.length} calls</p>
                 <p><strong className="text-foreground">Coordinates:</strong> {meta.lat.toFixed(4)}, {meta.lng.toFixed(4)}</p>
                 <p><strong className="text-foreground">Weights:</strong> Demand {(SCORING_WEIGHTS.trend * 100).toFixed(0)}% · Saturation {(SCORING_WEIGHTS.competition * 100).toFixed(0)}% · Quality gap {(SCORING_WEIGHTS.qualityGap * 100).toFixed(0)}% · Volume {(SCORING_WEIGHTS.reviewSupport * 100).toFixed(0)}%</p>

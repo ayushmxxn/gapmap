@@ -89,9 +89,11 @@ const SATELLITE_CONFIG: [string, unknown][] = [
 export function DiscoveryMap({
   competitors,
   mode = "globe",
+  scope = "neighborhood",
 }: {
   competitors: Competitor[];
   mode?: "globe" | "local";
+  scope?: "city" | "neighborhood";
 }) {
   const isLocal = mode === "local";
   const { lat, lng, setArea } = useAppStore();
@@ -293,12 +295,60 @@ export function DiscoveryMap({
     };
   }, [isLocal]);
 
-  /* Fly globe → country → city → neighbourhood when an area is chosen. */
+  /* Position map camera for local/city scan or fly globe when area is chosen. */
   React.useEffect(() => {
     if (isLocal) {
       const map = mapRef.current?.getMap() as unknown as
-        | { flyTo: (opts: Record<string, unknown>) => void }
+        | {
+            flyTo: (opts: Record<string, unknown>) => void;
+            fitBounds: (
+              bounds: [[number, number], [number, number]],
+              opts?: Record<string, unknown>,
+            ) => void;
+          }
         | undefined;
+
+      if (!map) return;
+
+      if (scope === "city") {
+        const validCoords = competitors.filter(
+          (c) => typeof c.lat === "number" && typeof c.lng === "number",
+        );
+        if (validCoords.length > 1) {
+          let minLng = Infinity,
+            maxLng = -Infinity;
+          let minLat = Infinity,
+            maxLat = -Infinity;
+          for (const c of validCoords) {
+            if (c.lng! < minLng) minLng = c.lng!;
+            if (c.lng! > maxLng) maxLng = c.lng!;
+            if (c.lat! < minLat) minLat = c.lat!;
+            if (c.lat! > maxLat) maxLat = c.lat!;
+          }
+          map.fitBounds(
+            [
+              [minLng, minLat],
+              [maxLng, maxLat],
+            ],
+            {
+              padding: { top: 60, bottom: 60, left: 60, right: 60 },
+              maxZoom: 14,
+              duration: 1500,
+              essential: true,
+            },
+          );
+          return;
+        }
+
+        map.flyTo({
+          center: [lng, lat],
+          zoom: 11.8,
+          duration: 1500,
+          essential: true,
+        });
+        return;
+      }
+
       map?.flyTo({
         center: [lng, lat],
         zoom: 13.5,
@@ -322,7 +372,7 @@ export function DiscoveryMap({
       curve: 1.42,
       essential: true,
     });
-  }, [lat, lng, isLocal]);
+  }, [lat, lng, isLocal, scope, competitors]);
 
   if (!isMapboxConfigured()) {
     return (
@@ -348,7 +398,9 @@ export function DiscoveryMap({
             longitude: isLocal ? lng : INDIA_CENTER[0],
             latitude: isLocal ? lat : INDIA_CENTER[1],
             zoom: isLocal
-              ? 13.5
+              ? scope === "city"
+                ? 11.8
+                : 13.5
               : getOptimalGlobeZoom(dimensions.width, dimensions.height, 0.70),
           }}
           style={{ width: "100%", height: "100%" }}
@@ -402,6 +454,35 @@ export function DiscoveryMap({
                   zoom: optimalZoom,
                 });
               }
+
+              if (isLocal && scope === "city" && competitors.length > 1) {
+                const validCoords = competitors.filter(
+                  (c) => typeof c.lat === "number" && typeof c.lng === "number",
+                );
+                if (validCoords.length > 1) {
+                  let minLng = Infinity,
+                    maxLng = -Infinity;
+                  let minLat = Infinity,
+                    maxLat = -Infinity;
+                  for (const c of validCoords) {
+                    if (c.lng! < minLng) minLng = c.lng!;
+                    if (c.lng! > maxLng) maxLng = c.lng!;
+                    if (c.lat! < minLat) minLat = c.lat!;
+                    if (c.lat! > maxLat) maxLat = c.lat!;
+                  }
+                  (map as unknown as { fitBounds: (bounds: [[number, number], [number, number]], opts?: Record<string, unknown>) => void }).fitBounds(
+                    [
+                      [minLng, minLat],
+                      [maxLng, maxLat],
+                    ],
+                    {
+                      padding: { top: 60, bottom: 60, left: 60, right: 60 },
+                      maxZoom: 14,
+                      duration: 0,
+                    },
+                  );
+                }
+              }
             }
           }}
           onDragStart={() => {
@@ -438,18 +519,20 @@ export function DiscoveryMap({
             setArea(clickLat, clickLng, label);
           }}
         >
-          <Source id="scan-radius" type="geojson" data={radiusGeoJson}>
-            <Layer
-              id="scan-radius-fill"
-              type="fill"
-              paint={{ "fill-color": "#2563eb", "fill-opacity": 0.08 }}
-            />
-            <Layer
-              id="scan-radius-line"
-              type="line"
-              paint={{ "line-color": "#2563eb", "line-width": 1.5 }}
-            />
-          </Source>
+          {scope !== "city" && (
+            <Source id="scan-radius" type="geojson" data={radiusGeoJson}>
+              <Layer
+                id="scan-radius-fill"
+                type="fill"
+                paint={{ "fill-color": "#2563eb", "fill-opacity": 0.08 }}
+              />
+              <Layer
+                id="scan-radius-line"
+                type="line"
+                paint={{ "line-color": "#2563eb", "line-width": 1.5 }}
+              />
+            </Source>
+          )}
 
           {!isLocal &&
             projection === "globe" &&

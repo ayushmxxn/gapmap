@@ -8,15 +8,19 @@ export function CompetitorsTable({
   competitors,
   showAddress = false,
   showSamplingNote = false,
+  scope = "neighborhood",
 }: {
   competitors: Competitor[];
   showAddress?: boolean;
   showSamplingNote?: boolean;
+  scope?: "city" | "neighborhood";
 }) {
   if (competitors.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border/70 p-4 text-center text-xs text-muted-foreground">
-        No places found inside the scan radius.
+        {scope === "city"
+          ? "No places found across the selected city."
+          : "No places found inside the scan radius."}
       </div>
     );
   }
@@ -94,7 +98,7 @@ export function CompetitorsTable({
           </summary>
           <div className="mt-2.5 border-t border-border/40 pt-2.5 text-muted-foreground leading-relaxed">
             <p>
-              To evaluate market health, GapMap examines high-volume anchors (to gauge maximum footfall), lower-rated businesses (to reveal customer pain points), and median establishments (for representative performance) across the scan radius.
+              To evaluate market health, GapMap examines high-volume anchors (to gauge maximum footfall), lower-rated businesses (to reveal customer pain points), and median establishments (for representative performance) {scope === "city" ? "across the selected city." : "across the scan radius."}
             </p>
           </div>
         </details>

@@ -68,7 +68,13 @@ export function ScanStudio() {
   const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const runScan = React.useCallback(
-    (targetLat: number, targetLng: number, catId: string, area: string) => {
+    (
+      targetLat: number,
+      targetLng: number,
+      catId: string,
+      area: string,
+      targetScope?: "city" | "neighborhood",
+    ) => {
       setStatus("loading");
       setError(null);
       setResult(null);
@@ -87,6 +93,7 @@ export function ScanStudio() {
         lng: targetLng,
         categoryId: catId,
         areaLabel: area,
+        scope: targetScope,
       }).then(
         (data) => {
           setResult(data);
@@ -218,10 +225,11 @@ export function ScanStudio() {
                     lng: targetLng,
                     categoryId: targetCat,
                     areaLabel: targetArea,
+                    scope: targetScope,
                   }) => {
                     setArea(targetLat, targetLng, targetArea);
                     setCategoryId(targetCat);
-                    runScan(targetLat, targetLng, targetCat, targetArea);
+                    runScan(targetLat, targetLng, targetCat, targetArea, targetScope);
                   }}
                 />
               </div>
@@ -236,12 +244,58 @@ export function ScanStudio() {
         )}
 
         {status === "loading" && (
-          <div className="flex flex-col gap-4 py-8" aria-live="polite">
-            <div className="h-72 animate-pulse rounded-2xl border border-border/40 bg-muted/20" />
-            <p className="text-xs text-muted-foreground">
-              Scanning {cleanAreaDisplay} for{" "}
-              {selectedCategory.label.toLowerCase()} opportunities…
-            </p>
+          <div className="flex flex-col gap-6 py-4 sm:py-6" aria-live="polite">
+            <div className="relative grid gap-8 lg:grid-cols-[1.1fr_1fr] items-stretch">
+              {/* Left Card Skeleton: Mirrors SignalSummary */}
+              <div className="flex min-h-[380px] sm:min-h-[440px] lg:min-h-[460px] flex-col justify-between rounded-2xl border border-border/60 bg-card/60 p-6 md:p-8 animate-pulse shadow-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3.5 w-24 rounded bg-muted" />
+                    <div className="size-1 rounded-full bg-muted-foreground/30" />
+                    <div className="h-3.5 w-16 rounded bg-muted" />
+                  </div>
+                  <div className="mt-4 h-7 w-3/4 rounded-lg bg-muted" />
+                  <div className="mt-2 h-7 w-1/2 rounded-lg bg-muted" />
+
+                  <div className="mt-6 flex items-baseline gap-4">
+                    <div className="h-14 w-20 rounded-xl bg-muted" />
+                    <div className="h-5 w-28 rounded-md bg-muted" />
+                  </div>
+
+                  <div className="mt-6 space-y-2 border-t border-border/40 pt-4">
+                    <div className="h-3.5 w-full rounded bg-muted/80" />
+                    <div className="h-3.5 w-4/5 rounded bg-muted/80" />
+                  </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-3 gap-3 border-t border-border/40 pt-6">
+                  <div className="h-12 rounded-xl bg-muted/60" />
+                  <div className="h-12 rounded-xl bg-muted/60" />
+                  <div className="h-12 rounded-xl bg-muted/60" />
+                </div>
+              </div>
+
+              {/* Right Card Skeleton: Mirrors Local Map */}
+              <div className="relative flex h-[320px] sm:h-[400px] lg:h-[460px] min-h-[320px] sm:min-h-[400px] lg:min-h-[460px] w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-muted/20 p-6 animate-pulse shadow-xs">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.08)_0,transparent_70%)]" />
+                <div className="size-24 rounded-full border border-primary/20 bg-primary/5" />
+                <div className="mt-4 h-3 w-32 rounded-full bg-muted" />
+              </div>
+
+              {/* Center Status Badge Overlay */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
+                <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-border/80 bg-background/95 px-5 py-3 shadow-lg backdrop-blur-md transition-all">
+                  <span className="relative flex size-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
+                  </span>
+                  <p className="text-xs sm:text-sm font-medium text-foreground">
+                    Scanning <span className="font-semibold text-primary">{cleanAreaDisplay}</span> for{" "}
+                    <span className="font-semibold">{selectedCategory.label.toLowerCase()}</span> opportunities…
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -265,6 +319,7 @@ export function ScanStudio() {
                 <MapWrapper
                   competitors={result.competitors}
                   mode="local"
+                  scope={result.scope?.type ?? (result.area.scope ?? "neighborhood")}
                   className="h-full"
                 />
               </div>

@@ -10,10 +10,12 @@ const emptySubscribe = () => () => {};
 export function MapWrapper({
   competitors,
   mode = "globe",
+  scope = "neighborhood",
   className,
 }: {
   competitors: Competitor[];
   mode?: "globe" | "local";
+  scope?: "city" | "neighborhood";
   className?: string;
 }) {
   const isGlobe = mode === "globe";
@@ -34,7 +36,7 @@ export function MapWrapper({
       )}
     >
       {mounted ? (
-        <DiscoveryMap competitors={competitors} mode={mode} />
+        <DiscoveryMap competitors={competitors} mode={mode} scope={scope} />
       ) : (
         <div className="flex h-full w-full animate-pulse items-center justify-center rounded-3xl bg-[#080d1a] text-xs text-muted-foreground">
           Loading map…

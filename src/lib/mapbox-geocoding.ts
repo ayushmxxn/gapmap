@@ -9,6 +9,7 @@ export interface GeocodingResult {
   fullAddress: string;
   lat: number;
   lng: number;
+  scope?: "city" | "neighborhood";
 }
 
 export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
@@ -25,6 +26,7 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
       fullAddress: p.label,
       lat: p.lat,
       lng: p.lng,
+      scope: p.type,
     }));
 
   if (isMockMode() || !isMapboxConfigured()) {
@@ -46,14 +48,23 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
         id: string;
         text: string;
         place_name: string;
+        place_type?: string[];
         center: [number, number];
-      }) => ({
-        id: f.id,
-        name: f.text || f.place_name.split(",")[0],
-        fullAddress: f.place_name,
-        lng: f.center[0],
-        lat: f.center[1],
-      }),
+      }) => {
+        const isCity =
+          Array.isArray(f.place_type) &&
+          f.place_type.includes("place") &&
+          !f.place_type.includes("neighborhood") &&
+          !f.place_type.includes("locality");
+        return {
+          id: f.id,
+          name: f.text || f.place_name.split(",")[0],
+          fullAddress: f.place_name,
+          lng: f.center[0],
+          lat: f.center[1],
+          scope: isCity ? ("city" as const) : ("neighborhood" as const),
+        };
+      },
     );
   } catch {
     return fallbackResults();

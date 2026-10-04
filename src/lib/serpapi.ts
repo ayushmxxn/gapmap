@@ -144,20 +144,24 @@ async function callSerpApi(
 
 export interface MapsSearchInput {
   q: string;
-  ll: string;
+  ll?: string;
+  start?: number;
 }
 
 export async function fetchMapsPlaces(
   input: MapsSearchInput,
 ): Promise<MapsPlace[]> {
-  const raw = await callSerpApi({
+  const params: Record<string, string | number | boolean> = {
     engine: "google_maps",
     type: "search",
     q: input.q,
-    ll: input.ll,
     hl: "en",
     gl: "in",
-  });
+  };
+  if (input.ll) params.ll = input.ll;
+  if (input.start !== undefined) params.start = input.start;
+
+  const raw = await callSerpApi(params);
   return mapsResponseSchema.parse(raw).local_results;
 }
 

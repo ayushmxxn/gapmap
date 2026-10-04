@@ -41,13 +41,39 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
   const verdictLabel = getOpportunityVerdict(gapSignal.verdict);
   const conclusion = getPlainEnglishConclusion(result);
 
+  const isCityScope = result.scope?.type === "city" || result.area.scope === "city";
+  const scopeLabel =
+    result.scope?.label ??
+    (isCityScope
+      ? `City-wide scan · ${result.scope?.cityName || result.area.label.split(",")[0]}`
+      : "Neighborhood scan · 1.5 km");
+
   return (
     <section className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-6 md:p-8 shadow-xs">
       <div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-          <span className="font-semibold text-foreground">{result.area.label}</span>
-          <span className="text-muted-foreground/40">·</span>
-          <span>{result.category.label}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+            <span className="font-semibold text-foreground">{result.area.label}</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span>{result.category.label}</span>
+          </div>
+
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-tight",
+              isCityScope
+                ? "border border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-400"
+                : "border border-border/80 bg-muted/50 text-muted-foreground",
+            )}
+          >
+            <span
+              className={cn(
+                "size-1.5 rounded-full shrink-0",
+                isCityScope ? "bg-sky-500" : "bg-muted-foreground/70",
+              )}
+            />
+            <span>{scopeLabel}</span>
+          </span>
         </div>
 
         <h1 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-foreground leading-tight">
@@ -106,7 +132,8 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
 
       <div className="mt-8 flex flex-col gap-4 border-t border-border/50 pt-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{result.stats.places}</span> nearby places
+          <span className="font-medium text-foreground">{result.stats.places}</span>{" "}
+          {isCityScope ? "places across city" : "nearby places"}
           <span className="text-muted-foreground/40 mx-1.5">·</span>
           <span className="font-medium text-foreground">{formatReviewCount(result.stats.totalReviews)}</span> reviews
           <span className="text-muted-foreground/40 mx-1.5">·</span>

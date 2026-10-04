@@ -210,6 +210,14 @@ export const insightSchema = z.object({
 });
 export type Insight = z.infer<typeof insightSchema>;
 
+export const scanScopeSchema = z.object({
+  type: z.enum(["city", "neighborhood"]),
+  label: z.string(),
+  radiusKm: z.number().optional(),
+  cityName: z.string().optional(),
+});
+export type ScanScope = z.infer<typeof scanScopeSchema>;
+
 export const scanResultSchema = z.object({
   mode: z.enum(["mock", "live"]),
   version: z.literal(SCORING_VERSION),
@@ -217,7 +225,9 @@ export const scanResultSchema = z.object({
     label: z.string(),
     lat: z.number(),
     lng: z.number(),
+    scope: z.enum(["city", "neighborhood"]).optional(),
   }),
+  scope: scanScopeSchema.optional(),
   category: z.object({ id: z.string(), label: z.string() }),
   gapSignal: z.object({
     score: z.number(),

@@ -7,6 +7,7 @@ export interface ScanInput {
   lng: number;
   categoryId: string;
   areaLabel: string;
+  scope?: "city" | "neighborhood";
 }
 
 export async function postScan(input: ScanInput): Promise<ScanResult> {

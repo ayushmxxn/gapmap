@@ -37,6 +37,7 @@ interface UnifiedSearchProps {
     lng: number;
     categoryId: string;
     areaLabel: string;
+    scope?: "city" | "neighborhood";
   }) => void;
   className?: string;
 }
@@ -63,6 +64,7 @@ export function UnifiedSearch({
     lat: number;
     lng: number;
     areaLabel: string;
+    scope?: "city" | "neighborhood";
   } | null>(() => {
     if (initialLat && initialLng && initialAreaLabel) {
       return {
@@ -108,7 +110,12 @@ export function UnifiedSearch({
 
   // Derive final resolved location
   const resolvedArea = preset
-    ? { lat: preset.lat, lng: preset.lng, areaLabel: preset.label }
+    ? {
+        lat: preset.lat,
+        lng: preset.lng,
+        areaLabel: preset.label,
+        scope: preset.type,
+      }
     : parsed.locationText.trim()
       ? asyncArea
       : null;
@@ -145,6 +152,7 @@ export function UnifiedSearch({
               lat: places[0].lat,
               lng: places[0].lng,
               areaLabel: places[0].fullAddress || places[0].name,
+              scope: places[0].scope,
             });
             setAsyncFailed(false);
             setAsyncError(false);
@@ -220,6 +228,7 @@ export function UnifiedSearch({
       lng: resolvedArea.lng,
       categoryId: activeCategory.id,
       areaLabel: resolvedArea.areaLabel,
+      scope: resolvedArea.scope,
     });
   };
 
@@ -229,6 +238,7 @@ export function UnifiedSearch({
       lat: place.lat,
       lng: place.lng,
       areaLabel: place.fullAddress,
+      scope: place.scope,
     });
     setAsyncFailed(false);
     setAsyncError(false);
