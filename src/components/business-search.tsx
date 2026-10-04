@@ -84,15 +84,15 @@ export function BusinessSearch({
               inputRef.current?.blur();
             }
           }}
-          className="h-9 w-full min-w-36 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-10 w-full min-w-36 rounded-xl border border-border bg-background px-3.5 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/10"
         />
-        <span className="pointer-events-none absolute right-2.5 text-muted-foreground">
+        <span className="pointer-events-none absolute right-3 text-muted-foreground">
           <HugeiconsIcon icon={Search01Icon} size={15} strokeWidth={2} />
         </span>
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 z-50 mt-1 max-h-80 w-full min-w-64 overflow-y-auto rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-1.5 max-h-80 w-full min-w-64 overflow-y-auto rounded-xl border border-border/80 bg-popover/95 p-2 text-popover-foreground shadow-xl backdrop-blur-md">
           {query.trim().length > 0 && !isExactPreset && (
             <div className="mb-2 border-b border-border pb-2">
               <button

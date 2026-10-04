@@ -113,8 +113,8 @@ export function ScanStudio() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-2.5 md:px-6">
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
@@ -128,18 +128,18 @@ export function ScanStudio() {
               }}
               className="flex items-center gap-2 text-left cursor-pointer transition-opacity hover:opacity-80 shrink-0"
             >
-              <span className="flex size-8 items-center justify-center rounded-lg border border-border bg-muted">
-                <HugeiconsIcon icon={Search01Icon} size={17} strokeWidth={2} />
+              <span className="flex size-7 items-center justify-center rounded-lg border border-border/60 bg-muted/40">
+                <HugeiconsIcon icon={Search01Icon} size={15} strokeWidth={2} />
               </span>
-              <span className="text-lg font-semibold tracking-tight">GapMap</span>
+              <span className="text-base font-semibold tracking-tight">GapMap</span>
             </button>
 
             {status !== "idle" && (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground truncate border-l border-border pl-3">
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground truncate border-l border-border/60 pl-3">
                 <span className="font-medium text-foreground truncate max-w-44 md:max-w-xs">
                   {cleanAreaDisplay}
                 </span>
-                <span className="opacity-40">·</span>
+                <span className="text-muted-foreground/40">·</span>
                 <span className="font-medium text-foreground whitespace-nowrap">
                   {selectedCategory.label}
                 </span>
@@ -151,7 +151,7 @@ export function ScanStudio() {
             {status !== "idle" && (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => {
                   setStatus("idle");
@@ -159,7 +159,7 @@ export function ScanStudio() {
                   setError(null);
                   window.history.replaceState(null, "", "/");
                 }}
-                className="cursor-pointer text-xs font-medium"
+                className="h-8 px-3 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
               >
                 New scan
               </Button>
@@ -169,20 +169,20 @@ export function ScanStudio() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 md:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 md:px-6">
         {status === "idle" && (
-          <div className="grid flex-1 gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <div className="flex flex-col justify-center rounded-xl border border-border bg-card p-6 md:p-8 shadow-xs">
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <div className="grid flex-1 gap-10 lg:grid-cols-[1.1fr_1fr] items-center">
+            <div className="flex flex-col justify-center py-2 lg:py-6 lg:pr-4">
+              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-foreground leading-[1.1]">
                 Find what&apos;s missing.
               </h1>
-              <p className="mt-2 text-sm text-muted-foreground md:text-base leading-relaxed">
+              <p className="mt-3 text-base md:text-lg text-muted-foreground leading-relaxed">
                 See where a business could work before you open one.
               </p>
 
               <div className="mt-8 flex flex-col gap-6">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-foreground">
                     Where do you want to look?
                   </label>
                   <LocationSearch
@@ -191,9 +191,9 @@ export function ScanStudio() {
                       setArea(newLat, newLng, label)
                     }
                     placeholder="Search a city, neighborhood, or address"
-                    className="mt-2.5 w-full"
+                    className="mt-2 w-full"
                   />
-                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-2 flex flex-wrap items-center gap-1">
                     <span className="text-xs text-muted-foreground mr-1">Popular places:</span>
                     {AREA_PRESETS.map((p) => {
                       const isSelected = areaLabel === p.label;
@@ -203,10 +203,10 @@ export function ScanStudio() {
                           type="button"
                           onClick={() => setArea(p.lat, p.lng, p.label)}
                           className={cn(
-                            "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+                            "rounded-md px-2 py-0.5 text-xs font-medium transition-colors cursor-pointer",
                             isSelected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-muted/40 text-foreground hover:bg-muted",
+                              ? "bg-foreground text-background font-semibold"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
                           )}
                         >
                           {p.label.split(",")[0]}
@@ -217,10 +217,10 @@ export function ScanStudio() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-foreground">
                     What do you want to open?
                   </label>
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  <div className="mt-2 flex flex-wrap gap-1">
                     {CATEGORIES.map((c) => {
                       const isSelected =
                         selectedCategory.id === c.id ||
@@ -231,10 +231,10 @@ export function ScanStudio() {
                           type="button"
                           onClick={() => setCategoryId(c.id)}
                           className={cn(
-                            "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+                            "rounded-md px-2 py-0.5 text-xs font-medium transition-colors cursor-pointer",
                             isSelected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-muted/40 text-foreground hover:bg-muted",
+                              ? "bg-foreground text-background font-semibold"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
                           )}
                         >
                           {c.label}
@@ -246,15 +246,15 @@ export function ScanStudio() {
                     value={categoryId}
                     onSelect={(cat) => setCategoryId(cat)}
                     placeholder="Search for another business"
-                    className="mt-2.5 w-full"
+                    className="mt-2 w-full"
                   />
                 </div>
 
-                <div className="pt-1">
+                <div className="pt-2">
                   <Button
                     type="button"
                     size="lg"
-                    className="w-full sm:w-auto font-medium cursor-pointer"
+                    className="h-11 px-6 rounded-xl font-medium cursor-pointer shadow-xs transition-all hover:opacity-90"
                     onClick={() =>
                       runScan(lat, lng, categoryId, areaLabel)
                     }
@@ -265,36 +265,36 @@ export function ScanStudio() {
               </div>
             </div>
 
-            <div className="min-h-[360px] overflow-hidden rounded-xl border border-border">
+            <div className="min-h-[420px] lg:min-h-[500px]">
               <MapWrapper competitors={[]} mode="globe" />
             </div>
           </div>
         )}
 
         {status === "loading" && (
-          <div className="flex flex-col gap-4" aria-live="polite">
-            <div className="h-72 animate-pulse rounded-xl border border-border bg-muted/40" />
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-4 py-8" aria-live="polite">
+            <div className="h-72 animate-pulse rounded-2xl border border-border/40 bg-muted/20" />
+            <p className="text-xs text-muted-foreground">
               Scanning {cleanAreaDisplay} for {selectedCategory.label.toLowerCase()} opportunities…
             </p>
           </div>
         )}
 
         {status === "error" && (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5 text-sm">
-            <p className="font-semibold text-destructive">Scan failed</p>
-            <p className="mt-1 text-muted-foreground">{error ?? "Please try again."}</p>
+          <div className="rounded-2xl border border-border/60 bg-muted/20 p-6 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground text-sm">Scan could not be completed</p>
+            <p className="mt-1">{error ?? "Please try again."}</p>
           </div>
         )}
 
         {status === "success" && result && (
           <div className="flex flex-col gap-6" id="gap-result">
-            <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+            <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] items-stretch">
               <SignalSummary
                 result={result}
                 onOpenEvidence={() => setSheetOpen(true)}
               />
-              <div className="min-h-[420px] overflow-hidden rounded-xl border border-border">
+              <div className="min-h-[460px]">
                 <MapWrapper competitors={result.competitors} mode="local" />
               </div>
             </div>

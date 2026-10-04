@@ -8,7 +8,7 @@ export function ThemesList({
 }) {
   if (withheld || themes.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+      <div className="rounded-lg border border-dashed border-border/70 p-4 text-xs text-muted-foreground">
         Not enough customer reviews in this immediate area to highlight recurring themes with confidence.
       </div>
     );
@@ -24,22 +24,22 @@ export function ThemesList({
       : "Recurring customer discussion topics across local businesses:";
 
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground leading-relaxed">
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted-foreground leading-relaxed">
         {themeSummary}
       </p>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {themes.map((t) => (
           <span
             key={`${t.keyword}-${t.sourcePlace}`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3.5 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-muted/60"
           >
             <span className="font-medium">
               {t.keyword.charAt(0).toUpperCase() + t.keyword.slice(1).toLowerCase()}
             </span>
-            <span className="text-xs text-muted-foreground">
-              {t.mentions} {t.mentions === 1 ? "mention" : "mentions"}
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              {t.mentions}
             </span>
           </span>
         ))}

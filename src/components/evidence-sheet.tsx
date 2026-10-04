@@ -20,23 +20,6 @@ function formatEngineName(engine: string): string {
   }
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-2.5">
-      <h3 className="text-sm font-semibold text-foreground">
-        {title}
-      </h3>
-      {children}
-    </section>
-  );
-}
-
 export function EvidenceSheet({
   open,
   onClose,
@@ -73,7 +56,7 @@ export function EvidenceSheet({
       <div
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300",
+          "absolute inset-0 bg-black/25 backdrop-blur-[2px] transition-opacity duration-200 ease-out",
           open ? "opacity-100" : "opacity-0",
         )}
       />
@@ -82,14 +65,14 @@ export function EvidenceSheet({
         aria-modal="true"
         aria-label="Evidence and supporting analysis"
         className={cn(
-          "absolute top-0 right-0 flex h-full w-full max-w-2xl flex-col bg-background shadow-2xl transition-transform duration-300 ease-out border-l border-border",
+          "absolute top-0 right-0 flex h-full w-full max-w-lg md:max-w-xl flex-col border-l border-border/80 bg-background shadow-2xl transition-transform duration-250 ease-out",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
-          <div>
-            <h2 className="font-semibold text-foreground">Evidence &amp; analysis</h2>
-            <p className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between border-b border-border/60 px-5 py-3.5">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-foreground tracking-tight">Evidence &amp; analysis</h2>
+            <p className="text-xs text-muted-foreground truncate">
               {result.category.label} in {result.area.label}
             </p>
           </div>
@@ -98,135 +81,147 @@ export function EvidenceSheet({
             type="button"
             onClick={onClose}
             aria-label="Close evidence panel"
-            className="flex size-8 items-center justify-center rounded-md text-lg text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+            className="flex size-7 items-center justify-center rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-5 py-5 text-xs">
           {/* 1. Nearby businesses */}
-          <Section title="Nearby businesses">
-            <p className="text-xs text-muted-foreground">
-              Direct and indirect competitors identified within the scan area.
-            </p>
-            <div className="mt-1">
-              <CompetitorsTable
-                competitors={result.competitors}
-                showAddress={false}
-                showSamplingNote={false}
-              />
+          <section className="flex flex-col gap-2">
+            <div>
+              <h3 className="font-semibold text-foreground tracking-tight">Nearby businesses</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Places identified within the scan radius.
+              </p>
             </div>
-          </Section>
+            <CompetitorsTable
+              competitors={result.competitors}
+              showAddress={false}
+              showSamplingNote={false}
+            />
+          </section>
 
           {/* 2. What customers say */}
-          <Section title="What customers say">
-            <div className="mt-1">
-              <ThemesList
-                themes={result.themes}
-                withheld={result.themesWithheld}
-              />
+          <section className="flex flex-col gap-2 border-t border-border/50 pt-5">
+            <div>
+              <h3 className="font-semibold text-foreground tracking-tight">What customers say</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Recurring sentiment from local reviews.
+              </p>
             </div>
-          </Section>
+            <ThemesList
+              themes={result.themes}
+              withheld={result.themesWithheld}
+            />
+          </section>
 
           {/* 3. Search demand */}
-          <Section title="Search demand">
-            <div className="mt-1">
-              <TrendChart trend={result.trend} />
+          <section className="flex flex-col gap-2 border-t border-border/50 pt-5">
+            <div>
+              <h3 className="font-semibold text-foreground tracking-tight">Search demand</h3>
             </div>
-          </Section>
+            <TrendChart trend={result.trend} />
+          </section>
 
-          {/* 4. How we scored it */}
-          <Section title="How we scored it">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              The opportunity score evaluates four weighted factors:
-            </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 text-xs">
-              <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5">
-                <span className="font-semibold text-foreground">Trend demand</span>
-                <p className="text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.trend * 100).toFixed(0)}% weight · 12-month search velocity</p>
-              </div>
-              <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5">
-                <span className="font-semibold text-foreground">Market saturation</span>
-                <p className="text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.competition * 100).toFixed(0)}% weight · competitor density</p>
-              </div>
-              <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5">
-                <span className="font-semibold text-foreground">Quality gap</span>
-                <p className="text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.qualityGap * 100).toFixed(0)}% weight · customer complaints and low ratings</p>
-              </div>
-              <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5">
-                <span className="font-semibold text-foreground">Review volume support</span>
-                <p className="text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.reviewSupport * 100).toFixed(0)}% weight · total customer engagement</p>
-              </div>
-            </div>
-            {result.gapSignal.renormalized && (
-              <p className="text-xs text-muted-foreground">
-                Search trend data was unavailable, so weights were redistributed proportionally across places and reviews.
-              </p>
-            )}
-          </Section>
-
-          {/* 5. Collapsed "How we choose businesses" */}
-          <details className="group rounded-xl border border-border bg-card p-4 text-xs transition-colors">
-            <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
-              <span>How we choose businesses</span>
-              <span className="text-muted-foreground transition-transform group-open:rotate-180">
+          {/* 4. Collapsed: How we scored it */}
+          <details className="group rounded-lg border border-border/60 bg-muted/15 p-3.5 transition-colors hover:border-border/90">
+            <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
+              <span>How we scored it</span>
+              <span className="text-muted-foreground transition-transform duration-200 group-open:rotate-180">
                 ▾
               </span>
             </summary>
-            <div className="mt-3 text-muted-foreground leading-relaxed space-y-2 border-t border-border pt-3">
+            <div className="mt-3 space-y-2.5 border-t border-border/40 pt-3 text-xs text-muted-foreground leading-relaxed">
+              <p>The opportunity score evaluates four weighted factors:</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="rounded-md border border-border/50 bg-background/50 p-2.5">
+                  <span className="font-medium text-foreground">Trend demand</span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.trend * 100).toFixed(0)}% weight · 12-month search velocity</p>
+                </div>
+                <div className="rounded-md border border-border/50 bg-background/50 p-2.5">
+                  <span className="font-medium text-foreground">Market saturation</span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.competition * 100).toFixed(0)}% weight · competitor density</p>
+                </div>
+                <div className="rounded-md border border-border/50 bg-background/50 p-2.5">
+                  <span className="font-medium text-foreground">Quality gap</span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.qualityGap * 100).toFixed(0)}% weight · complaints & low ratings</p>
+                </div>
+                <div className="rounded-md border border-border/50 bg-background/50 p-2.5">
+                  <span className="font-medium text-foreground">Review volume support</span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.reviewSupport * 100).toFixed(0)}% weight · customer engagement</p>
+                </div>
+              </div>
+              {result.gapSignal.renormalized && (
+                <p className="text-[11px] text-muted-foreground">
+                  Search trend was unavailable, so weights were redistributed proportionally.
+                </p>
+              )}
+            </div>
+          </details>
+
+          {/* 5. Collapsed: How we chose businesses */}
+          <details className="group rounded-lg border border-border/60 bg-muted/15 p-3.5 transition-colors hover:border-border/90">
+            <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
+              <span>How we chose businesses</span>
+              <span className="text-muted-foreground transition-transform duration-200 group-open:rotate-180">
+                ▾
+              </span>
+            </summary>
+            <div className="mt-3 space-y-2 border-t border-border/40 pt-3 text-xs text-muted-foreground leading-relaxed">
               <p>
-                To avoid review bias, GapMap inspects reviews from up to 5 strategic competitors within the scan area:
+                To avoid review bias, GapMap samples up to 5 strategic competitors across the area:
               </p>
               <ul className="list-disc pl-4 space-y-1">
                 <li><strong className="text-foreground">2 Anchors:</strong> Highest review volume to gauge customer footfall.</li>
-                <li><strong className="text-foreground">2 Low-rated businesses:</strong> Below 4.0★ to identify recurring complaints and unmet needs.</li>
-                <li><strong className="text-foreground">1 Median business:</strong> Mid-tier rating for average neighborhood service standards.</li>
+                <li><strong className="text-foreground">2 Low-rated businesses:</strong> Below 4.0★ to uncover customer pain points.</li>
+                <li><strong className="text-foreground">1 Median business:</strong> Mid-tier rating for local average standards.</li>
               </ul>
               <p className="text-[11px] text-muted-foreground pt-1">
-                This balanced sampling ensures we don&apos;t look only at top performers or only at struggling businesses.
+                This balanced sampling ensures findings reflect both top performers and unmet market needs.
               </p>
             </div>
           </details>
 
-          {/* 6. Collapsed "Technical details" */}
-          <details className="group rounded-xl border border-border bg-card p-4 text-xs transition-colors">
-            <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
+          {/* 6. Collapsed: Technical details */}
+          <details className="group rounded-lg border border-border/60 bg-muted/15 p-3.5 transition-colors hover:border-border/90">
+            <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
               <span>Technical details</span>
-              <span className="text-muted-foreground transition-transform group-open:rotate-180">
+              <span className="text-muted-foreground transition-transform duration-200 group-open:rotate-180">
                 ▾
               </span>
             </summary>
-            <div className="mt-3 text-muted-foreground leading-relaxed space-y-3 border-t border-border pt-3">
-              <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-1">
+            <div className="mt-3 space-y-3 border-t border-border/40 pt-3 text-xs text-muted-foreground leading-relaxed">
+              <div className="rounded-md border border-border/50 bg-background/50 p-2.5 space-y-1">
                 <p><strong className="text-foreground">Data provider:</strong> SerpApi (Google Maps, Google Maps Reviews, Google Trends)</p>
                 <p><strong className="text-foreground">Execution mode:</strong> {result.mode}</p>
-                <p><strong className="text-foreground">Total queries logged:</strong> {result.ledger.length} calls</p>
+                <p><strong className="text-foreground">Queries logged:</strong> {result.ledger.length} calls</p>
                 <p><strong className="text-foreground">Coordinates:</strong> {meta.lat.toFixed(4)}, {meta.lng.toFixed(4)}</p>
-                <p><strong className="text-foreground">Scoring formula:</strong> Demand ({(SCORING_WEIGHTS.trend * 100).toFixed(0)}%) + Saturation ({(SCORING_WEIGHTS.competition * 100).toFixed(0)}%) + Quality gap ({(SCORING_WEIGHTS.qualityGap * 100).toFixed(0)}%) + Volume support ({(SCORING_WEIGHTS.reviewSupport * 100).toFixed(0)}%)</p>
+                <p><strong className="text-foreground">Weights:</strong> Demand {(SCORING_WEIGHTS.trend * 100).toFixed(0)}% · Saturation {(SCORING_WEIGHTS.competition * 100).toFixed(0)}% · Quality gap {(SCORING_WEIGHTS.qualityGap * 100).toFixed(0)}% · Volume {(SCORING_WEIGHTS.reviewSupport * 100).toFixed(0)}%</p>
               </div>
 
               <div>
-                <p className="font-semibold text-foreground mb-2">Data trace</p>
-                <div className="overflow-hidden rounded-lg border border-border">
+                <p className="font-semibold text-foreground mb-1.5">Data trace</p>
+                <div className="overflow-hidden rounded-md border border-border/60">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-border bg-muted/50 text-left">
-                        <th className="px-3 py-2 font-medium text-muted-foreground">Id</th>
-                        <th className="px-3 py-2 font-medium text-muted-foreground">Source</th>
-                        <th className="px-3 py-2 font-medium text-muted-foreground">Summary</th>
-                        <th className="px-3 py-2 font-medium text-muted-foreground">Results</th>
+                      <tr className="border-b border-border/60 bg-muted/30 text-left text-muted-foreground">
+                        <th className="px-2.5 py-1.5 font-normal">Id</th>
+                        <th className="px-2.5 py-1.5 font-normal">Source</th>
+                        <th className="px-2.5 py-1.5 font-normal">Summary</th>
+                        <th className="px-2.5 py-1.5 font-normal">Results</th>
                       </tr>
                     </thead>
                     <tbody>
                       {result.ledger.map((entry) => (
-                        <tr key={entry.id} className="border-b border-border last:border-0">
-                          <td className="px-3 py-2 font-mono font-medium text-foreground">{entry.id}</td>
-                          <td className="px-3 py-2 text-foreground font-medium">{formatEngineName(entry.engine)}</td>
-                          <td className="px-3 py-2 text-muted-foreground truncate max-w-44" title={entry.summary}>
+                        <tr key={entry.id} className="border-b border-border/30 last:border-0 hover:bg-muted/20">
+                          <td className="px-2.5 py-1.5 font-mono text-[11px] text-foreground">{entry.id}</td>
+                          <td className="px-2.5 py-1.5 font-medium text-foreground text-[11px]">{formatEngineName(entry.engine)}</td>
+                          <td className="px-2.5 py-1.5 text-muted-foreground text-[11px] truncate max-w-40" title={entry.summary}>
                             {entry.summary}
                           </td>
-                          <td className="px-3 py-2 font-mono text-foreground">{entry.resultCount}</td>
+                          <td className="px-2.5 py-1.5 font-mono text-[11px] text-foreground">{entry.resultCount}</td>
                         </tr>
                       ))}
                     </tbody>

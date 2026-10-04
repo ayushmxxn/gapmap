@@ -40,72 +40,72 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
   const conclusion = getPlainEnglishConclusion(result);
 
   return (
-    <section className="flex flex-col justify-between rounded-xl border border-border bg-card p-6 md:p-8 shadow-xs">
+    <section className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card/60 p-6 md:p-8 backdrop-blur-xs">
       <div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">{result.area.label}</span>
-          <span>·</span>
-          <span className="font-medium text-foreground">{result.category.label}</span>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+          <span className="text-foreground">{result.area.label}</span>
+          <span className="text-muted-foreground/40">/</span>
+          <span>{result.category.label}</span>
         </div>
 
-        <h1 className="mt-2 text-xl font-semibold tracking-tight text-foreground md:text-2xl">
+        <h1 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-foreground leading-tight">
           Should I consider opening this business here?
         </h1>
 
-        <div className="mt-5 flex items-baseline gap-3">
-          <p className="text-5xl font-semibold tracking-tight text-foreground md:text-6xl">
-            {gapSignal.score}
-            <span className="text-2xl font-normal text-muted-foreground">/100</span>
-          </p>
-          <span
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold tracking-wide",
-              gapSignal.verdict === "strong" &&
-                "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-              gapSignal.verdict === "moderate" &&
-                "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-              gapSignal.verdict === "weak" &&
-                "bg-muted text-muted-foreground",
-            )}
-          >
-            {verdictLabel}
-          </span>
+        <div className="mt-6 flex flex-wrap items-baseline gap-4">
+          <div className="flex items-baseline">
+            <span className="text-5xl md:text-6xl font-semibold tracking-tight tabular-nums text-foreground">
+              {gapSignal.score}
+            </span>
+            <span className="text-xl font-normal text-muted-foreground ml-1.5">/100</span>
+          </div>
+
+          <div className="inline-flex items-center gap-2 text-sm font-medium">
+            <span
+              className={cn(
+                "size-2 rounded-full shrink-0",
+                gapSignal.verdict === "strong" && "bg-emerald-500",
+                gapSignal.verdict === "moderate" && "bg-amber-500",
+                gapSignal.verdict === "weak" && "bg-zinc-400 dark:bg-zinc-600",
+              )}
+            />
+            <span
+              className={cn(
+                gapSignal.verdict === "strong" && "text-emerald-700 dark:text-emerald-400",
+                gapSignal.verdict === "moderate" && "text-amber-700 dark:text-amber-400",
+                gapSignal.verdict === "weak" && "text-muted-foreground",
+              )}
+            >
+              {verdictLabel}
+            </span>
+          </div>
         </div>
 
-        <p className="mt-4 text-base font-medium leading-relaxed text-foreground md:text-[17px]">
+        <p className="mt-4 text-base md:text-lg font-normal leading-relaxed text-foreground/90">
           &ldquo;{conclusion}&rdquo;
         </p>
 
-        <div className="mt-6 border-t border-border pt-5">
-          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-8 border-t border-border/50 pt-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {factors.map((f) => (
-              <div
-                key={f.label}
-                className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-3"
-              >
-                <dt className="text-xs text-muted-foreground">{f.label}</dt>
-                <dd className="text-sm font-semibold text-foreground">
-                  {f.value}
-                </dd>
+              <div key={f.label} className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">{f.label}</span>
+                <span className="text-sm font-medium text-foreground">{f.value}</span>
               </div>
             ))}
-          </dl>
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-muted-foreground md:text-sm">
-          <span className="font-semibold text-foreground">
-            {result.stats.places} nearby places
-          </span>{" "}
-          ·{" "}
-          <span className="font-semibold text-foreground">
-            {formatReviewCount(result.stats.totalReviews)} reviews
-          </span>{" "}
-          ·{" "}
-          <span className="font-semibold text-foreground">
-            {avgRating != null ? `${avgRating.toFixed(1)}★ average` : "Unrated"}
-          </span>
+      <div className="mt-8 flex flex-col gap-4 border-t border-border/50 pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{result.stats.places}</span> nearby places
+          <span className="text-muted-foreground/40 mx-1.5">·</span>
+          <span className="font-medium text-foreground">{formatReviewCount(result.stats.totalReviews)}</span> reviews
+          <span className="text-muted-foreground/40 mx-1.5">·</span>
+          <span className="font-medium text-foreground">
+            {avgRating != null ? `${avgRating.toFixed(1)}★` : "Unrated"}
+          </span> average
         </p>
 
         <Button
@@ -113,7 +113,7 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
           onClick={onOpenEvidence}
           variant="outline"
           size="sm"
-          className="font-medium cursor-pointer"
+          className="h-8 rounded-lg px-3.5 text-xs font-medium cursor-pointer transition-colors hover:bg-muted shrink-0"
         >
           See the evidence →
         </Button>

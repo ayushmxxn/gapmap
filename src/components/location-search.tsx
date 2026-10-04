@@ -99,15 +99,15 @@ export function LocationSearch({
               inputRef.current?.blur();
             }
           }}
-          className="h-9 w-full min-w-40 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-10 w-full min-w-40 rounded-xl border border-border bg-background px-3.5 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/10"
         />
-        <span className="pointer-events-none absolute right-2.5 text-muted-foreground">
+        <span className="pointer-events-none absolute right-3 text-muted-foreground">
           <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={2} />
         </span>
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 z-50 mt-1 max-h-72 w-full min-w-64 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-1.5 max-h-72 w-full min-w-64 overflow-y-auto rounded-xl border border-border/80 bg-popover/95 p-1.5 text-popover-foreground shadow-xl backdrop-blur-md">
           {!query.trim() && (
             <div className="flex flex-col gap-1">
               <p className="px-2 py-1 text-xs font-medium text-muted-foreground">
