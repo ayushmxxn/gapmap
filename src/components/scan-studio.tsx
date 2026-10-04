@@ -174,11 +174,11 @@ export function ScanStudio() {
         </header>
       )}
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-between px-4 py-6 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-between px-4 py-4 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
         {status === "idle" && (
           <div className="flex w-full flex-1 flex-col justify-between">
             {/* Top row directly on hero section page - no separate navbar */}
-            <div className="flex w-full items-center justify-between py-2 sm:py-3">
+            <div className="flex w-full items-center justify-between py-2 sm:py-2.5">
               <div className="flex items-center gap-2.5 select-none">
                 <Image
                   src="/logo.png"
@@ -197,7 +197,7 @@ export function ScanStudio() {
               <ThemeToggle />
             </div>
 
-            <div className="my-auto grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16 py-6 sm:py-10">
+            <div className="my-auto grid w-full items-center lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16 pt-5 pb-2 sm:py-6">
             {/* Left Content Column */}
             <div className="flex w-full max-w-[600px] flex-col justify-center">
               <h1 className="text-3xl sm:text-[30px] md:text-[32px] lg:text-[34px] xl:text-[48px] font-semibold tracking-[-0.035em] text-foreground leading-[1.18] text-balance">
@@ -206,7 +206,7 @@ export function ScanStudio() {
                 <span>before you open one.</span>
               </h1>
 
-              <div className="mt-7 sm:mt-9">
+              <div className="mt-5 sm:mt-8">
                 <UnifiedSearch
                   key={`${categoryId}-${areaLabel}`}
                   initialCategoryId={categoryId}
@@ -227,8 +227,8 @@ export function ScanStudio() {
               </div>
             </div>
 
-            {/* Right Globe Column: Content first on mobile, map stacked below */}
-            <div className="relative w-full h-[320px] sm:h-[390px] lg:h-[480px]">
+            {/* Right Globe Column: Distinct secondary visual with clear separation on mobile */}
+            <div className="relative w-full h-[220px] sm:h-[300px] lg:h-[480px] mt-10 sm:mt-12 lg:mt-0">
               <MapWrapper competitors={[]} mode="globe" className="h-full" />
             </div>
           </div>

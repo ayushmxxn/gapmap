@@ -382,18 +382,18 @@ export function UnifiedSearch({
     <form
       ref={containerRef}
       onSubmit={handleSubmit}
-      className={cn("flex flex-col relative", className)}
+      className={cn("flex flex-col relative w-full sm:max-w-[496px]", className)}
     >
       {/* 1. Accessible Label */}
       <label
         htmlFor="unified-search-input"
-        className="text-[13px] font-medium tracking-tight text-foreground/80"
+        className="text-xs sm:text-[13px] font-medium tracking-tight text-muted-foreground/90 sm:text-foreground/80 select-none"
       >
         What are you thinking of opening?
       </label>
 
       {/* 2. Primary Unified Input with Embedded Autocomplete */}
-      <div className="relative mt-2 flex items-center">
+      <div className="relative mt-1.5 sm:mt-2 flex items-center">
         <HugeiconsIcon
           icon={Search01Icon}
           size={16}
@@ -505,7 +505,7 @@ export function UnifiedSearch({
 
       {/* 3. Progressive-Disclosure Quick-Pick Pills + More */}
       <div
-        className="relative mt-2.5 flex flex-wrap items-center gap-1.5"
+        className="relative mt-2 sm:mt-2.5 flex flex-wrap items-center gap-1.5"
         role="group"
         aria-label="Popular business shortcuts"
       >
@@ -642,7 +642,7 @@ export function UnifiedSearch({
       )}
 
       {/* 5. Primary CTA */}
-      <div className={cn(hasFeedback ? "mt-3.5" : "mt-4.5")}>
+      <div className={cn(hasFeedback ? "mt-3.5 sm:mt-4" : "mt-5 sm:mt-6")}>
         <LiquidMetalButton
           label="Find opportunities"
           type="submit"
@@ -657,7 +657,7 @@ export function UnifiedSearch({
 
       {/* 6. Helpful Example Guidance (Only shown when no valid search entered yet) */}
       {!isReady && (
-        <p className="mt-3 text-xs text-muted-foreground/70 select-none">
+        <p className="mt-2.5 sm:mt-3 text-[11.5px] sm:text-xs text-muted-foreground/60 select-none">
           Try{" "}
           <button
             type="button"
@@ -665,7 +665,7 @@ export function UnifiedSearch({
               setQuery("Gym in Mumbai");
               if (showValidation) setShowValidation(false);
             }}
-            className="text-foreground/80 hover:text-foreground underline underline-offset-3 decoration-muted-foreground/30 hover:decoration-foreground cursor-pointer transition-colors"
+            className="text-foreground/75 hover:text-foreground underline underline-offset-3 decoration-muted-foreground/30 hover:decoration-foreground cursor-pointer transition-colors"
           >
             “Gym in Mumbai”
           </button>{" "}
@@ -676,7 +676,7 @@ export function UnifiedSearch({
               setQuery("Cafe in Koramangala");
               if (showValidation) setShowValidation(false);
             }}
-            className="text-foreground/80 hover:text-foreground underline underline-offset-3 decoration-muted-foreground/30 hover:decoration-foreground cursor-pointer transition-colors"
+            className="text-foreground/75 hover:text-foreground underline underline-offset-3 decoration-muted-foreground/30 hover:decoration-foreground cursor-pointer transition-colors"
           >
             “Cafe in Koramangala”
           </button>
