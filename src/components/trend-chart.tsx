@@ -37,7 +37,7 @@ export function TrendChart({ trend }: { trend: ScanResult["trend"] }) {
         </p>
       </div>
 
-      <div className="h-44 w-full rounded-lg border border-border/60 bg-muted/20 p-2.5">
+      <div className="h-44 w-full rounded-xl border border-border/70 bg-card p-3 shadow-2xs">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={trend.points} margin={{ top: 6, right: 6, bottom: 0, left: -24 }}>
             <XAxis
@@ -60,7 +60,8 @@ export function TrendChart({ trend }: { trend: ScanResult["trend"] }) {
               contentStyle={{
                 background: "var(--popover)",
                 border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
+                borderRadius: "var(--radius-lg)",
+                boxShadow: "0 2px 8px -1px rgba(0, 0, 0, 0.08)",
                 color: "var(--popover-foreground)",
                 fontSize: 11,
                 padding: "6px 10px",

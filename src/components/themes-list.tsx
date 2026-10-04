@@ -33,7 +33,7 @@ export function ThemesList({
         {themes.map((t) => (
           <span
             key={`${t.keyword}-${t.sourcePlace}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-muted/60"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card px-2.5 py-1 text-xs text-foreground shadow-2xs transition-colors hover:bg-muted/30"
           >
             <span className="font-medium">
               {t.keyword.charAt(0).toUpperCase() + t.keyword.slice(1).toLowerCase()}

@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { SCORING_WEIGHTS, type ScanResult } from "@/lib/scoring";
 import { CompetitorsTable } from "@/components/competitors-table";
 import { ThemesList } from "@/components/themes-list";
@@ -40,11 +42,14 @@ export function EvidenceSheet({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevBody;
+      document.documentElement.style.overflow = prevHtml;
     };
   }, [open, onClose]);
 
@@ -56,7 +61,7 @@ export function EvidenceSheet({
       <div
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-black/25 backdrop-blur-[2px] transition-opacity duration-200 ease-out",
+          "absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-200 ease-out touch-none",
           open ? "opacity-100" : "opacity-0",
         )}
       />
@@ -65,11 +70,11 @@ export function EvidenceSheet({
         aria-modal="true"
         aria-label="Evidence and supporting analysis"
         className={cn(
-          "absolute top-0 right-0 flex h-full w-full max-w-lg md:max-w-xl flex-col border-l border-border/80 bg-background shadow-2xl transition-transform duration-250 ease-out",
+          "absolute top-0 right-0 flex h-full w-full max-w-lg md:max-w-xl flex-col border-l border-border/80 bg-background shadow-xl transition-transform duration-250 ease-out",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <div className="flex items-center justify-between border-b border-border/60 px-5 py-3.5">
+        <div className="flex items-center justify-between border-b border-border/60 px-5 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))]">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-foreground tracking-tight">Evidence &amp; analysis</h2>
             <p className="text-xs text-muted-foreground truncate">
@@ -81,18 +86,18 @@ export function EvidenceSheet({
             type="button"
             onClick={onClose}
             aria-label="Close evidence panel"
-            className="flex size-7 items-center justify-center rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            className="flex size-9 sm:size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 cursor-pointer"
           >
-            ✕
+            <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={2} />
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-5 py-5 text-xs">
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-5 py-5 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pl-[max(1.25rem,env(safe-area-inset-left,0px))] text-xs">
           {/* 1. Nearby businesses */}
-          <section className="flex flex-col gap-2">
+          <section className="flex flex-col gap-2.5">
             <div>
-              <h3 className="font-semibold text-foreground tracking-tight">Nearby businesses</h3>
-              <p className="text-[11px] text-muted-foreground">
+              <h3 className="font-semibold text-foreground tracking-tight text-sm">Nearby businesses</h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 Places identified within the scan radius.
               </p>
             </div>
@@ -104,10 +109,10 @@ export function EvidenceSheet({
           </section>
 
           {/* 2. What customers say */}
-          <section className="flex flex-col gap-2 border-t border-border/50 pt-5">
+          <section className="flex flex-col gap-2.5 border-t border-border/50 pt-5">
             <div>
-              <h3 className="font-semibold text-foreground tracking-tight">What customers say</h3>
-              <p className="text-[11px] text-muted-foreground">
+              <h3 className="font-semibold text-foreground tracking-tight text-sm">What customers say</h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 Recurring sentiment from local reviews.
               </p>
             </div>
@@ -118,37 +123,40 @@ export function EvidenceSheet({
           </section>
 
           {/* 3. Search demand */}
-          <section className="flex flex-col gap-2 border-t border-border/50 pt-5">
+          <section className="flex flex-col gap-2.5 border-t border-border/50 pt-5">
             <div>
-              <h3 className="font-semibold text-foreground tracking-tight">Search demand</h3>
+              <h3 className="font-semibold text-foreground tracking-tight text-sm">Search demand</h3>
             </div>
             <TrendChart trend={result.trend} />
           </section>
 
           {/* 4. Collapsed: How we scored it */}
-          <details className="group rounded-lg border border-border/60 bg-muted/15 p-3.5 transition-colors hover:border-border/90">
+          <details className="group rounded-xl border border-border/70 bg-card p-3.5 shadow-2xs transition-all hover:border-border">
             <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
               <span>How we scored it</span>
-              <span className="text-muted-foreground transition-transform duration-200 group-open:rotate-180">
-                ▾
-              </span>
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={14}
+                strokeWidth={2}
+                className="text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+              />
             </summary>
             <div className="mt-3 space-y-2.5 border-t border-border/40 pt-3 text-xs text-muted-foreground leading-relaxed">
               <p>The opportunity score evaluates four weighted factors:</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="rounded-md border border-border/50 bg-background/50 p-2.5">
+                <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5">
                   <span className="font-medium text-foreground">Trend demand</span>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.trend * 100).toFixed(0)}% weight · 12-month search velocity</p>
                 </div>
-                <div className="rounded-md border border-border/50 bg-background/50 p-2.5">
+                <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5">
                   <span className="font-medium text-foreground">Market saturation</span>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.competition * 100).toFixed(0)}% weight · competitor density</p>
                 </div>
-                <div className="rounded-md border border-border/50 bg-background/50 p-2.5">
+                <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5">
                   <span className="font-medium text-foreground">Quality gap</span>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.qualityGap * 100).toFixed(0)}% weight · complaints & low ratings</p>
                 </div>
-                <div className="rounded-md border border-border/50 bg-background/50 p-2.5">
+                <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5">
                   <span className="font-medium text-foreground">Review volume support</span>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{(SCORING_WEIGHTS.reviewSupport * 100).toFixed(0)}% weight · customer engagement</p>
                 </div>
@@ -162,12 +170,15 @@ export function EvidenceSheet({
           </details>
 
           {/* 5. Collapsed: How we chose businesses */}
-          <details className="group rounded-lg border border-border/60 bg-muted/15 p-3.5 transition-colors hover:border-border/90">
+          <details className="group rounded-xl border border-border/70 bg-card p-3.5 shadow-2xs transition-all hover:border-border">
             <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
               <span>How we chose businesses</span>
-              <span className="text-muted-foreground transition-transform duration-200 group-open:rotate-180">
-                ▾
-              </span>
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={14}
+                strokeWidth={2}
+                className="text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+              />
             </summary>
             <div className="mt-3 space-y-2 border-t border-border/40 pt-3 text-xs text-muted-foreground leading-relaxed">
               <p>
@@ -185,15 +196,18 @@ export function EvidenceSheet({
           </details>
 
           {/* 6. Collapsed: Technical details */}
-          <details className="group rounded-lg border border-border/60 bg-muted/15 p-3.5 transition-colors hover:border-border/90">
+          <details className="group rounded-xl border border-border/70 bg-card p-3.5 shadow-2xs transition-all hover:border-border">
             <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
               <span>Technical details</span>
-              <span className="text-muted-foreground transition-transform duration-200 group-open:rotate-180">
-                ▾
-              </span>
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={14}
+                strokeWidth={2}
+                className="text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+              />
             </summary>
             <div className="mt-3 space-y-3 border-t border-border/40 pt-3 text-xs text-muted-foreground leading-relaxed">
-              <div className="rounded-md border border-border/50 bg-background/50 p-2.5 space-y-1">
+              <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5 space-y-1">
                 <p><strong className="text-foreground">Data provider:</strong> SerpApi (Google Maps, Google Maps Reviews, Google Trends)</p>
                 <p><strong className="text-foreground">Execution mode:</strong> {result.mode}</p>
                 <p><strong className="text-foreground">Queries logged:</strong> {result.ledger.length} calls</p>
@@ -203,25 +217,25 @@ export function EvidenceSheet({
 
               <div>
                 <p className="font-semibold text-foreground mb-1.5">Data trace</p>
-                <div className="overflow-hidden rounded-md border border-border/60">
+                <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-border/60 bg-muted/30 text-left text-muted-foreground">
-                        <th className="px-2.5 py-1.5 font-normal">Id</th>
-                        <th className="px-2.5 py-1.5 font-normal">Source</th>
-                        <th className="px-2.5 py-1.5 font-normal">Summary</th>
-                        <th className="px-2.5 py-1.5 font-normal">Results</th>
+                      <tr className="border-b border-border/60 bg-muted/25 text-left text-muted-foreground">
+                        <th className="px-3 py-2 font-normal">Id</th>
+                        <th className="px-3 py-2 font-normal">Source</th>
+                        <th className="px-3 py-2 font-normal">Summary</th>
+                        <th className="px-3 py-2 font-normal">Results</th>
                       </tr>
                     </thead>
                     <tbody>
                       {result.ledger.map((entry) => (
                         <tr key={entry.id} className="border-b border-border/30 last:border-0 hover:bg-muted/20">
-                          <td className="px-2.5 py-1.5 font-mono text-[11px] text-foreground">{entry.id}</td>
-                          <td className="px-2.5 py-1.5 font-medium text-foreground text-[11px]">{formatEngineName(entry.engine)}</td>
-                          <td className="px-2.5 py-1.5 text-muted-foreground text-[11px] truncate max-w-40" title={entry.summary}>
+                          <td className="px-3 py-2 font-mono text-[11px] text-foreground">{entry.id}</td>
+                          <td className="px-3 py-2 font-medium text-foreground text-[11px]">{formatEngineName(entry.engine)}</td>
+                          <td className="px-3 py-2 text-muted-foreground text-[11px] truncate max-w-40" title={entry.summary}>
                             {entry.summary}
                           </td>
-                          <td className="px-2.5 py-1.5 font-mono text-[11px] text-foreground">{entry.resultCount}</td>
+                          <td className="px-3 py-2 font-mono text-[11px] text-foreground">{entry.resultCount}</td>
                         </tr>
                       ))}
                     </tbody>

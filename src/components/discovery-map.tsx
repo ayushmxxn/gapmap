@@ -25,11 +25,32 @@ import { reverseGeocode } from "@/lib/mapbox-geocoding";
 type Projection = "globe" | "mercator";
 
 const INDIA_CENTER: [number, number] = [78.9629, 22.5937];
-const GLOBE_ZOOM = 1.8;
 const LOCAL_ZOOM = 14;
 /** Above this zoom we render flat; below it we render the globe. */
 const FLAT_ZOOM = 9;
 const ROUND_ZOOM = 5;
+
+/**
+ * Calculates the exact Mapbox globe camera zoom level required to fit the entire Earth
+ * sphere within the container with comfortable breathing room on all sides.
+ */
+function getOptimalGlobeZoom(
+  width: number,
+  height: number,
+  targetRatio = 0.70,
+): number {
+  if (!width || !height) return 1.35;
+  const minDim = Math.min(width, height);
+  const targetDiameter = minDim * targetRatio;
+  const fovRad = (36.86989764584402 * Math.PI) / 180;
+  const focalLength = (height / 2) / Math.tan(fovRad / 2);
+  const targetRadius = targetDiameter / 2;
+  const t = targetRadius / focalLength;
+  const s = t / Math.sqrt(1 + t * t);
+  const globeRadius = (s / (1 - s)) * focalLength;
+  const zoom = Math.log2((2 * Math.PI * globeRadius) / 512);
+  return Math.max(0.4, Math.min(2.5, Number(zoom.toFixed(2))));
+}
 
 function pinColor(rating: number | undefined): string {
   if (rating == null) return "#71717a";
@@ -80,7 +101,10 @@ export function DiscoveryMap({
     () => true,
     () => false,
   );
+
   const mapRef = React.useRef<MapRef>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
   const [globeProjection, setGlobeProjection] = React.useState<Projection>("globe");
   const projection = isLocal ? "mercator" : globeProjection;
   const projRef = React.useRef<Projection>(projection);
@@ -90,9 +114,12 @@ export function DiscoveryMap({
   }, [projection]);
 
   const [selected, setSelected] = React.useState<Competitor | null>(null);
-  const spinRef = React.useRef(!isLocal);
-  const resumeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasInteractedRef = React.useRef(false);
   const firstArea = React.useRef(true);
+
+  // Measurement states for reliable mounting
+  const [dimensions, setDimensions] = React.useState<{ width: number; height: number } | null>(null);
+  const [mapError, setMapError] = React.useState(false);
 
   const isDark = mounted && resolvedTheme === "dark";
   /* Satellite Earth for globe discovery; detailed streets for local analysis. */
@@ -175,48 +202,96 @@ export function DiscoveryMap({
     const map = mapRef.current?.getMap();
     if (!map) return;
     let cancelled = false;
+    const onStyleLoad = () => {
+      if (!cancelled) applySettings(isDark);
+    };
     if (map.isStyleLoaded()) {
       applySettings(isDark);
     } else {
-      map.once("style.load", () => {
-        if (!cancelled) applySettings(isDark);
-      });
+      map.once("style.load", onStyleLoad);
     }
     return () => {
       cancelled = true;
+      (map as unknown as { off?: (event: string, fn: () => void) => void }).off?.(
+        "style.load",
+        onStyleLoad,
+      );
     };
   }, [mapStyle, isDark, applySettings]);
 
-  /* Slow idle spin on the globe. Pauses on interaction, stops on selection. */
+  /* Measure container dimensions before rendering Map and handle resize/orientation */
   React.useEffect(() => {
-    let raf = 0;
-    let last = 0;
-    const tick = (t: number) => {
-      const map = mapRef.current?.getMap() as unknown as
-        | { getCenter: () => { lng: number }; setCenter: (c: { lng: number }) => void }
-        | undefined;
-      if (map && spinRef.current && t - last > 60) {
-        last = t;
-        try {
-          const c = map.getCenter();
-          map.setCenter({ lng: c.lng - 0.05 });
-        } catch {
-          /* map tearing down; ignore */
+    const el = containerRef.current;
+    if (!el) return;
+
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    let secondTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const updateMapDimensions = () => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const w = Math.round(rect.width);
+      const h = Math.round(rect.height);
+      if (w > 0 && h > 0) {
+        setDimensions((prev) => {
+          if (prev && Math.abs(prev.width - w) < 1 && Math.abs(prev.height - h) < 1) {
+            return prev;
+          }
+          return { width: w, height: h };
+        });
+
+        const map = mapRef.current?.getMap();
+        if (map) {
+          map.resize();
+          if (!isLocal && projRef.current === "globe" && !hasInteractedRef.current) {
+            const optimalZoom = getOptimalGlobeZoom(w, h, 0.70);
+            map.jumpTo({
+              center: INDIA_CENTER,
+              zoom: optimalZoom,
+            });
+          }
         }
       }
-      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
 
-  const pauseSpin = React.useCallback(() => {
-    spinRef.current = false;
-    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    resumeTimer.current = setTimeout(() => {
-      if (projRef.current === "globe") spinRef.current = true;
-    }, 6000);
-  }, []);
+    updateMapDimensions();
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          updateMapDimensions();
+        }
+      }
+    });
+    observer.observe(el);
+
+    const onOrientationChange = () => {
+      updateMapDimensions();
+      if (resizeTimer) clearTimeout(resizeTimer);
+      if (secondTimer) clearTimeout(secondTimer);
+      resizeTimer = setTimeout(updateMapDimensions, 150);
+      secondTimer = setTimeout(updateMapDimensions, 350);
+    };
+
+    window.addEventListener("resize", updateMapDimensions);
+    window.addEventListener("orientationchange", onOrientationChange);
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (vv) {
+      vv.addEventListener("resize", updateMapDimensions);
+    }
+
+    return () => {
+      observer.disconnect();
+      if (resizeTimer) clearTimeout(resizeTimer);
+      if (secondTimer) clearTimeout(secondTimer);
+      window.removeEventListener("resize", updateMapDimensions);
+      window.removeEventListener("orientationchange", onOrientationChange);
+      if (vv) {
+        vv.removeEventListener("resize", updateMapDimensions);
+      }
+    };
+  }, [isLocal]);
 
   /* Fly globe → country → city → neighbourhood when an area is chosen. */
   React.useEffect(() => {
@@ -236,10 +311,10 @@ export function DiscoveryMap({
       firstArea.current = false;
       return;
     }
+    hasInteractedRef.current = true;
     const map = mapRef.current?.getMap() as unknown as
       | { flyTo: (opts: Record<string, unknown>) => void }
       | undefined;
-    spinRef.current = false;
     map?.flyTo({
       center: [lng, lat],
       zoom: LOCAL_ZOOM,
@@ -248,13 +323,6 @@ export function DiscoveryMap({
       essential: true,
     });
   }, [lat, lng, isLocal]);
-
-  React.useEffect(
-    () => () => {
-      if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    },
-    [],
-  );
 
   if (!isMapboxConfigured()) {
     return (
@@ -267,162 +335,221 @@ export function DiscoveryMap({
   }
 
   return (
-    <div className="relative h-full min-h-[320px] w-full">
-      <Map
-        ref={mapRef}
-        mapboxAccessToken={getMapboxToken()}
-        initialViewState={{
-          longitude: isLocal ? lng : INDIA_CENTER[0],
-          latitude: isLocal ? lat : INDIA_CENTER[1],
-          zoom: isLocal ? 13.5 : GLOBE_ZOOM,
-        }}
-        style={{ width: "100%", height: "100%", minHeight: 320 }}
-        mapStyle={mapStyle}
-        onLoad={() => applySettings(isDark)}
-        onMouseDown={pauseSpin}
-        onTouchStart={pauseSpin}
-        onWheel={pauseSpin}
-        onMove={(e) => {
-          if (isLocal) return;
-          const z = e.target.getZoom();
-          const map = e.target as unknown as GlobeCapableMap;
-          if (z >= FLAT_ZOOM && projRef.current !== "mercator") {
-            projRef.current = "mercator";
-            setGlobeProjection("mercator");
-            map.setProjection?.("mercator");
-          } else if (z <= ROUND_ZOOM && projRef.current !== "globe") {
-            projRef.current = "globe";
-            setGlobeProjection("globe");
-            map.setProjection?.("globe");
-          }
-        }}
-        onClick={async (e) => {
-          const clickLat = Number(e.lngLat.lat.toFixed(4));
-          const clickLng = Number(e.lngLat.lng.toFixed(4));
-          const label = await reverseGeocode(clickLat, clickLng);
-          setArea(clickLat, clickLng, label);
-        }}
-      >
-        <Source id="scan-radius" type="geojson" data={radiusGeoJson}>
-          <Layer
-            id="scan-radius-fill"
-            type="fill"
-            paint={{ "fill-color": "#2563eb", "fill-opacity": 0.08 }}
-          />
-          <Layer
-            id="scan-radius-line"
-            type="line"
-            paint={{ "line-color": "#2563eb", "line-width": 1.5 }}
-          />
-        </Source>
+    <div
+      ref={containerRef}
+      className="relative h-full w-full min-h-[300px] overflow-hidden"
+    >
+      {/* 1. Only mount Map once container has measured dimensions */}
+      {dimensions && dimensions.width > 0 && dimensions.height > 0 && !mapError ? (
+        <Map
+          ref={mapRef}
+          mapboxAccessToken={getMapboxToken()}
+          initialViewState={{
+            longitude: isLocal ? lng : INDIA_CENTER[0],
+            latitude: isLocal ? lat : INDIA_CENTER[1],
+            zoom: isLocal
+              ? 13.5
+              : getOptimalGlobeZoom(dimensions.width, dimensions.height, 0.70),
+          }}
+          style={{ width: "100%", height: "100%" }}
+          mapStyle={mapStyle}
+          onError={() => setMapError(true)}
+          onLoad={() => {
+            applySettings(isDark);
+            const map = mapRef.current?.getMap();
+            if (map) {
+              (map as unknown as { setCooperativeGestures?: (enabled: boolean) => void })
+                .setCooperativeGestures?.(true);
+              if (!isLocal && !hasInteractedRef.current && dimensions) {
+                const optimalZoom = getOptimalGlobeZoom(
+                  dimensions.width,
+                  dimensions.height,
+                  0.70,
+                );
+                map.jumpTo({
+                  center: INDIA_CENTER,
+                  zoom: optimalZoom,
+                });
+              }
+            }
+          }}
+          onDragStart={() => {
+            hasInteractedRef.current = true;
+          }}
+          onZoomStart={() => {
+            hasInteractedRef.current = true;
+          }}
+          onPitchStart={() => {
+            hasInteractedRef.current = true;
+          }}
+          onRotateStart={() => {
+            hasInteractedRef.current = true;
+          }}
+          onMove={(e) => {
+            if (isLocal) return;
+            const z = e.target.getZoom();
+            const map = e.target as unknown as GlobeCapableMap;
+            if (z >= FLAT_ZOOM && projRef.current !== "mercator") {
+              projRef.current = "mercator";
+              setGlobeProjection("mercator");
+              map.setProjection?.("mercator");
+            } else if (z <= ROUND_ZOOM && projRef.current !== "globe") {
+              projRef.current = "globe";
+              setGlobeProjection("globe");
+              map.setProjection?.("globe");
+            }
+          }}
+          onClick={async (e) => {
+            hasInteractedRef.current = true;
+            const clickLat = Number(e.lngLat.lat.toFixed(4));
+            const clickLng = Number(e.lngLat.lng.toFixed(4));
+            const label = await reverseGeocode(clickLat, clickLng);
+            setArea(clickLat, clickLng, label);
+          }}
+        >
+          <Source id="scan-radius" type="geojson" data={radiusGeoJson}>
+            <Layer
+              id="scan-radius-fill"
+              type="fill"
+              paint={{ "fill-color": "#2563eb", "fill-opacity": 0.08 }}
+            />
+            <Layer
+              id="scan-radius-line"
+              type="line"
+              paint={{ "line-color": "#2563eb", "line-width": 1.5 }}
+            />
+          </Source>
 
-        {!isLocal &&
-          projection === "globe" &&
-          AREA_PRESETS.map((p) => (
-            <Marker
-              key={p.id}
-              longitude={p.lng}
-              latitude={p.lat}
-              anchor="center"
-              onClick={(e) => {
-                e.originalEvent.stopPropagation();
-                setArea(p.lat, p.lng, p.label);
-              }}
-            >
-              <span className="flex cursor-pointer flex-col items-center gap-1">
-                <span className="block size-2.5 rounded-full bg-primary ring-4 ring-primary/20 transition-transform hover:scale-125" />
-                <span className="rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap text-foreground backdrop-blur">
-                  {p.label.split(",")[0]}
-                </span>
-              </span>
-            </Marker>
-          ))}
-
-        <Marker longitude={lng} latitude={lat} anchor="center">
-          <span className="block size-3 rounded-full bg-blue-600 ring-4 ring-blue-600/20" />
-        </Marker>
-
-        {competitors.map(
-          (c) =>
-            c.lat != null &&
-            c.lng != null && (
+          {!isLocal &&
+            projection === "globe" &&
+            AREA_PRESETS.map((p) => (
               <Marker
-                key={competitorKey(c)}
-                longitude={c.lng}
-                latitude={c.lat}
-                anchor="bottom"
+                key={p.id}
+                longitude={p.lng}
+                latitude={p.lat}
+                anchor="center"
                 onClick={(e) => {
                   e.originalEvent.stopPropagation();
-                  setSelected(c);
+                  hasInteractedRef.current = true;
+                  setArea(p.lat, p.lng, p.label);
                 }}
               >
-                <span
-                  className={cn(
-                    "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform",
-                    selected &&
-                      competitorKey(selected) === competitorKey(c) &&
-                      "scale-125 ring-2 ring-white dark:ring-black",
-                  )}
-                  style={{ backgroundColor: pinColor(c.rating) }}
-                  title={c.title}
-                >
-                  {c.rating != null ? c.rating.toFixed(1) : "–"}
+                <span className="flex cursor-pointer flex-col items-center gap-1">
+                  <span className="block size-2.5 rounded-full bg-primary ring-4 ring-primary/20 transition-transform hover:scale-125" />
+                  <span className="rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap text-foreground backdrop-blur">
+                    {p.label.split(",")[0]}
+                  </span>
                 </span>
               </Marker>
-            ),
-        )}
+            ))}
 
-        {selected && selected.lat != null && selected.lng != null && (
-          <Popup
-            longitude={selected.lng}
-            latitude={selected.lat}
-            offset={12}
-            maxWidth="240px"
-            className="gapmap-popup"
-            onClose={() => setSelected(null)}
-          >
-            <div className="flex flex-col gap-0.5">
-              <p className="text-sm font-semibold tracking-tight text-foreground truncate">
-                {selected.title.split("|")[0]?.trim() ?? selected.title}
-              </p>
-              <p className="text-xs">
-                <span
-                  className="font-medium"
-                  style={{ color: pinColor(selected.rating) }}
+          <Marker longitude={lng} latitude={lat} anchor="center">
+            <span className="block size-3 rounded-full bg-blue-600 ring-4 ring-blue-600/20" />
+          </Marker>
+
+          {competitors.map(
+            (c) =>
+              c.lat != null &&
+              c.lng != null && (
+                <Marker
+                  key={competitorKey(c)}
+                  longitude={c.lng}
+                  latitude={c.lat}
+                  anchor="bottom"
+                  onClick={(e) => {
+                    e.originalEvent.stopPropagation();
+                    setSelected(c);
+                  }}
                 >
-                  {selected.rating != null
-                    ? `${selected.rating.toFixed(1)}★`
-                    : "Unrated"}
-                </span>
-                {selected.reviews != null && (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    · {formatReviewCount(selected.reviews)} reviews
+                  <span
+                    className={cn(
+                      "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform",
+                      selected &&
+                        competitorKey(selected) === competitorKey(c) &&
+                        "scale-125 ring-2 ring-white dark:ring-black",
+                    )}
+                    style={{ backgroundColor: pinColor(c.rating) }}
+                    title={c.title}
+                  >
+                    {c.rating != null ? c.rating.toFixed(1) : "–"}
                   </span>
-                )}
-              </p>
-              {selected.address && (
-                <p className="text-[11px] text-muted-foreground line-clamp-1">
-                  {selected.address}
+                </Marker>
+              ),
+          )}
+
+          {selected && selected.lat != null && selected.lng != null && (
+            <Popup
+              longitude={selected.lng}
+              latitude={selected.lat}
+              offset={12}
+              maxWidth="240px"
+              className="gapmap-popup"
+              onClose={() => setSelected(null)}
+            >
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-semibold tracking-tight text-foreground truncate">
+                  {selected.title.split("|")[0]?.trim() ?? selected.title}
                 </p>
-              )}
-            </div>
-          </Popup>
-        )}
-      </Map>
+                <p className="text-xs">
+                  <span
+                    className="font-medium"
+                    style={{ color: pinColor(selected.rating) }}
+                  >
+                    {selected.rating != null
+                      ? `${selected.rating.toFixed(1)}★`
+                      : "Unrated"}
+                  </span>
+                  {selected.reviews != null && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {formatReviewCount(selected.reviews)} reviews
+                    </span>
+                  )}
+                </p>
+                {selected.address && (
+                  <p className="text-[11px] text-muted-foreground line-clamp-1">
+                    {selected.address}
+                  </p>
+                )}
+              </div>
+            </Popup>
+          )}
+        </Map>
+      ) : mapError ? (
+        <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground bg-[#080d1a] rounded-3xl border border-border/40">
+          <p className="font-medium text-foreground">Map preview unavailable</p>
+          <p className="mt-1 max-w-xs text-muted-foreground/80">
+            Opportunity scanner and analytics remain fully operational.
+          </p>
+        </div>
+      ) : (
+        <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[#080d1a] text-xs text-muted-foreground/70">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-500/80 animate-pulse" />
+            <span>Loading map…</span>
+          </div>
+        </div>
+      )}
 
       {!isLocal && projection === "mercator" && (
         <button
           type="button"
           onClick={() => {
             const map = mapRef.current?.getMap() as unknown as
-              | { flyTo: (opts: Record<string, unknown>) => void }
+              | {
+                  flyTo: (opts: Record<string, unknown>) => void;
+                  getCanvas: () => HTMLCanvasElement;
+                }
               | undefined;
-            spinRef.current = true;
+            const canvas = map?.getCanvas?.();
+            const optimalZoom = canvas
+              ? getOptimalGlobeZoom(canvas.clientWidth, canvas.clientHeight, 0.70)
+              : 1.35;
+            hasInteractedRef.current = false;
             map?.flyTo({
               center: [...INDIA_CENTER],
-              zoom: GLOBE_ZOOM,
-              duration: 3000,
+              zoom: optimalZoom,
+              duration: 2500,
               essential: true,
             });
           }}

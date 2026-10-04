@@ -3,7 +3,7 @@ import { ScanStudio } from "@/components/scan-studio";
 
 export default function Home() {
   return (
-    <main className="min-h-dvh bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       <React.Suspense
         fallback={
           <div className="mx-auto w-full max-w-6xl px-4 py-8">
@@ -13,6 +13,6 @@ export default function Home() {
       >
         <ScanStudio />
       </React.Suspense>
-    </main>
+    </div>
   );
 }

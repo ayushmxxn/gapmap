@@ -1,5 +1,7 @@
 import { getMapboxToken, isMapboxConfigured } from "@/lib/mapbox";
+import { isMockMode } from "@/lib/mode";
 import { AREA_PRESETS } from "@/lib/categories";
+import { KNOWN_PLACES } from "@/lib/search-parser";
 
 export interface GeocodingResult {
   id: string;
@@ -13,9 +15,10 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
   const clean = query.trim();
   if (!clean) return [];
 
-  if (!isMapboxConfigured()) {
-    return AREA_PRESETS.filter((p) =>
-      p.label.toLowerCase().includes(clean.toLowerCase()),
+  const fallbackResults = () =>
+    KNOWN_PLACES.filter((p) =>
+      p.label.toLowerCase().includes(clean.toLowerCase()) ||
+      clean.toLowerCase().includes(p.label.split(",")[0].toLowerCase()),
     ).map((p) => ({
       id: p.id,
       name: p.label.split(",")[0],
@@ -23,6 +26,9 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
       lat: p.lat,
       lng: p.lng,
     }));
+
+  if (isMockMode() || !isMapboxConfigured()) {
+    return fallbackResults();
   }
 
   try {
@@ -50,15 +56,7 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
       }),
     );
   } catch {
-    return AREA_PRESETS.filter((p) =>
-      p.label.toLowerCase().includes(clean.toLowerCase()),
-    ).map((p) => ({
-      id: p.id,
-      name: p.label.split(",")[0],
-      fullAddress: p.label,
-      lat: p.lat,
-      lng: p.lng,
-    }));
+    return fallbackResults();
   }
 }
 
@@ -74,7 +72,7 @@ export async function reverseGeocode(
   });
   if (closePreset) return closePreset.label;
 
-  if (!isMapboxConfigured()) {
+  if (isMockMode() || !isMapboxConfigured()) {
     return "Selected location";
   }
 

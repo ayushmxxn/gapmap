@@ -1,5 +1,7 @@
 import type { Competitor } from "@/lib/scoring";
 import { formatReviewCount } from "@/lib/result-utils";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 
 export function CompetitorsTable({
@@ -13,7 +15,7 @@ export function CompetitorsTable({
 }) {
   if (competitors.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/70 p-4 text-center text-xs text-muted-foreground">
+      <div className="rounded-xl border border-dashed border-border/70 p-4 text-center text-xs text-muted-foreground">
         No places found inside the scan radius.
       </div>
     );
@@ -21,20 +23,20 @@ export function CompetitorsTable({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="overflow-x-auto rounded-lg border border-border/60">
+      <div className="overflow-x-auto rounded-xl border border-border/70 bg-card">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/20 text-left text-muted-foreground">
-              <th className="px-3.5 py-2 font-normal">Place</th>
-              <th className="px-3.5 py-2 font-normal">Rating</th>
-              <th className="px-3.5 py-2 font-normal">Reviews</th>
+            <tr className="border-b border-border/60 bg-muted/25 text-left text-muted-foreground">
+              <th className="px-3.5 py-2.5 font-normal">Place</th>
+              <th className="px-3.5 py-2.5 font-normal">Rating</th>
+              <th className="px-3.5 py-2.5 font-normal">Reviews</th>
             </tr>
           </thead>
           <tbody>
             {competitors.map((c) => (
               <tr
                 key={`${c.title}-${c.lat ?? 0}-${c.lng ?? 0}`}
-                className="border-b border-border/30 last:border-0 transition-colors hover:bg-muted/30"
+                className="border-b border-border/40 last:border-0 transition-colors hover:bg-muted/25"
               >
                 <td className="px-3.5 py-2.5">
                   <p className="font-medium text-foreground">{c.title}</p>
@@ -45,7 +47,7 @@ export function CompetitorsTable({
                 <td className="px-3.5 py-2.5">
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 font-medium tabular-nums",
+                      "inline-flex items-center gap-1.5 font-medium tabular-nums",
                       c.rating == null
                         ? "text-muted-foreground"
                         : c.rating >= 4.3
@@ -80,14 +82,17 @@ export function CompetitorsTable({
       </div>
 
       {showSamplingNote && (
-        <details className="group rounded-lg border border-border/60 bg-muted/20 p-3 text-xs">
-          <summary className="flex cursor-pointer items-center justify-between font-medium text-muted-foreground hover:text-foreground">
+        <details className="group rounded-xl border border-border/70 bg-card p-3.5 text-xs shadow-2xs">
+          <summary className="flex cursor-pointer items-center justify-between font-medium text-muted-foreground hover:text-foreground select-none">
             <span>Why these places?</span>
-            <span className="text-muted-foreground transition-transform group-open:rotate-180">
-              ▾
-            </span>
+            <HugeiconsIcon
+              icon={ArrowDown01Icon}
+              size={13}
+              strokeWidth={2}
+              className="text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+            />
           </summary>
-          <div className="mt-2 text-muted-foreground leading-relaxed">
+          <div className="mt-2.5 border-t border-border/40 pt-2.5 text-muted-foreground leading-relaxed">
             <p>
               To evaluate market health, GapMap examines high-volume anchors (to gauge maximum footfall), lower-rated businesses (to reveal customer pain points), and median establishments (for representative performance) across the scan radius.
             </p>

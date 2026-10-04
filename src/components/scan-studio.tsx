@@ -1,20 +1,18 @@
 "use client";
 
-import * as React from "react";
-import { useSearchParams } from "next/navigation";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Search01Icon } from "@hugeicons/core-free-icons";
-import { AREA_PRESETS, CATEGORIES, resolveCategory } from "@/lib/categories";
-import { postScan, scanUrl } from "@/lib/scan-client";
-import { useAppStore } from "@/store/app";
+import { EvidenceSheet } from "@/components/evidence-sheet";
 import { MapWrapper } from "@/components/map-wrapper";
 import { SignalSummary } from "@/components/signal-hero";
-import { EvidenceSheet } from "@/components/evidence-sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { LocationSearch } from "@/components/location-search";
-import { BusinessSearch } from "@/components/business-search";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { UnifiedSearch } from "@/components/unified-search";
+import { AREA_PRESETS, resolveCategory } from "@/lib/categories";
+import { postScan, scanUrl } from "@/lib/scan-client";
+import { useAppStore } from "@/store/app";
+import { Search01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useSearchParams } from "next/navigation";
+import * as React from "react";
 
 function useUrlSync() {
   const params = useSearchParams();
@@ -112,9 +110,9 @@ export function ScanStudio() {
       : areaLabel.split(",")[0]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6">
+    <div className="flex min-h-screen min-h-dvh flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-10 border-b border-black/[0.06] dark:border-white/[0.08] bg-white/95 dark:bg-card/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] transition-colors">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
@@ -126,12 +124,14 @@ export function ScanStudio() {
                   window.history.replaceState(null, "", "/");
                 }
               }}
-              className="flex items-center gap-2 text-left cursor-pointer transition-opacity hover:opacity-80 shrink-0"
+              className="flex items-center gap-2.5 text-left cursor-pointer transition-opacity hover:opacity-85 shrink-0"
             >
-              <span className="flex size-7 items-center justify-center rounded-lg border border-border/60 bg-muted/40">
+              <span className="flex size-7.5 items-center justify-center rounded-[9px] border border-black/[0.06] dark:border-white/10 bg-[#F2F2F3] dark:bg-muted text-foreground">
                 <HugeiconsIcon icon={Search01Icon} size={15} strokeWidth={2} />
               </span>
-              <span className="text-base font-semibold tracking-tight">GapMap</span>
+              <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#111827] dark:text-foreground">
+                GapMap
+              </span>
             </button>
 
             {status !== "idle" && (
@@ -169,104 +169,42 @@ export function ScanStudio() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 md:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-6 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
         {status === "idle" && (
-          <div className="grid flex-1 gap-10 lg:grid-cols-[1.1fr_1fr] items-center">
-            <div className="flex flex-col justify-center py-2 lg:py-6 lg:pr-4">
-              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-foreground leading-[1.1]">
-                Find what&apos;s missing.
+          <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16">
+            {/* Left Content Column */}
+            <div className="flex w-full max-w-[600px] flex-col justify-center">
+              <h1 className="text-2xl sm:text-[30px] md:text-[32px] lg:text-[34px] xl:text-[35px] font-semibold tracking-[-0.035em] text-foreground leading-[1.18]">
+                <span className="inline lg:whitespace-nowrap">
+                  See where your business could work
+                </span>
+                <br className="hidden sm:inline" />{" "}
+                <span>before you open one.</span>
               </h1>
-              <p className="mt-3 text-base md:text-lg text-muted-foreground leading-relaxed">
-                See where a business could work before you open one.
-              </p>
 
-              <div className="mt-8 flex flex-col gap-6">
-                <div>
-                  <label className="text-xs font-medium text-foreground">
-                    Where do you want to look?
-                  </label>
-                  <LocationSearch
-                    value={areaLabel}
-                    onSelect={(newLat, newLng, label) =>
-                      setArea(newLat, newLng, label)
-                    }
-                    placeholder="Search a city, neighborhood, or address"
-                    className="mt-2 w-full"
-                  />
-                  <div className="mt-2 flex flex-wrap items-center gap-1">
-                    <span className="text-xs text-muted-foreground mr-1">Popular places:</span>
-                    {AREA_PRESETS.map((p) => {
-                      const isSelected = areaLabel === p.label;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => setArea(p.lat, p.lng, p.label)}
-                          className={cn(
-                            "rounded-md px-2 py-0.5 text-xs font-medium transition-colors cursor-pointer",
-                            isSelected
-                              ? "bg-foreground text-background font-semibold"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                          )}
-                        >
-                          {p.label.split(",")[0]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-foreground">
-                    What do you want to open?
-                  </label>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {CATEGORIES.map((c) => {
-                      const isSelected =
-                        selectedCategory.id === c.id ||
-                        categoryId.toLowerCase() === c.id.toLowerCase();
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => setCategoryId(c.id)}
-                          className={cn(
-                            "rounded-md px-2 py-0.5 text-xs font-medium transition-colors cursor-pointer",
-                            isSelected
-                              ? "bg-foreground text-background font-semibold"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                          )}
-                        >
-                          {c.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <BusinessSearch
-                    value={categoryId}
-                    onSelect={(cat) => setCategoryId(cat)}
-                    placeholder="Search for another business"
-                    className="mt-2 w-full"
-                  />
-                </div>
-
-                <div className="pt-2">
-                  <Button
-                    type="button"
-                    size="lg"
-                    className="h-11 px-6 rounded-xl font-medium cursor-pointer shadow-xs transition-all hover:opacity-90"
-                    onClick={() =>
-                      runScan(lat, lng, categoryId, areaLabel)
-                    }
-                  >
-                    Find opportunities →
-                  </Button>
-                </div>
+              <div className="mt-7 sm:mt-9">
+                <UnifiedSearch
+                  initialCategoryId={categoryId}
+                  initialAreaLabel={areaLabel}
+                  initialLat={lat}
+                  initialLng={lng}
+                  onSearch={({
+                    lat: targetLat,
+                    lng: targetLng,
+                    categoryId: targetCat,
+                    areaLabel: targetArea,
+                  }) => {
+                    setArea(targetLat, targetLng, targetArea);
+                    setCategoryId(targetCat);
+                    runScan(targetLat, targetLng, targetCat, targetArea);
+                  }}
+                />
               </div>
             </div>
 
-            <div className="min-h-[420px] lg:min-h-[500px]">
-              <MapWrapper competitors={[]} mode="globe" />
+            {/* Right Globe Column: Content first on mobile, map stacked below */}
+            <div className="relative w-full h-[320px] sm:h-[390px] lg:h-[480px]">
+              <MapWrapper competitors={[]} mode="globe" className="h-full" />
             </div>
           </div>
         )}
@@ -275,14 +213,17 @@ export function ScanStudio() {
           <div className="flex flex-col gap-4 py-8" aria-live="polite">
             <div className="h-72 animate-pulse rounded-2xl border border-border/40 bg-muted/20" />
             <p className="text-xs text-muted-foreground">
-              Scanning {cleanAreaDisplay} for {selectedCategory.label.toLowerCase()} opportunities…
+              Scanning {cleanAreaDisplay} for{" "}
+              {selectedCategory.label.toLowerCase()} opportunities…
             </p>
           </div>
         )}
 
         {status === "error" && (
           <div className="rounded-2xl border border-border/60 bg-muted/20 p-6 text-xs text-muted-foreground">
-            <p className="font-semibold text-foreground text-sm">Scan could not be completed</p>
+            <p className="font-semibold text-foreground text-sm">
+              Scan could not be completed
+            </p>
             <p className="mt-1">{error ?? "Please try again."}</p>
           </div>
         )}
@@ -294,8 +235,12 @@ export function ScanStudio() {
                 result={result}
                 onOpenEvidence={() => setSheetOpen(true)}
               />
-              <div className="min-h-[460px]">
-                <MapWrapper competitors={result.competitors} mode="local" />
+              <div className="h-[460px] min-h-[460px] w-full">
+                <MapWrapper
+                  competitors={result.competitors}
+                  mode="local"
+                  className="h-full"
+                />
               </div>
             </div>
           </div>

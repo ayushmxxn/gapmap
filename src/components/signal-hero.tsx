@@ -8,6 +8,8 @@ import {
   getPlainEnglishConclusion,
 } from "@/lib/result-utils";
 import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 
 interface SignalSummaryProps {
@@ -40,11 +42,11 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
   const conclusion = getPlainEnglishConclusion(result);
 
   return (
-    <section className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card/60 p-6 md:p-8 backdrop-blur-xs">
+    <section className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-6 md:p-8 shadow-xs">
       <div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-          <span className="text-foreground">{result.area.label}</span>
-          <span className="text-muted-foreground/40">/</span>
+          <span className="font-semibold text-foreground">{result.area.label}</span>
+          <span className="text-muted-foreground/40">·</span>
           <span>{result.category.label}</span>
         </div>
 
@@ -57,27 +59,29 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
             <span className="text-5xl md:text-6xl font-semibold tracking-tight tabular-nums text-foreground">
               {gapSignal.score}
             </span>
-            <span className="text-xl font-normal text-muted-foreground ml-1.5">/100</span>
+            <span className="text-xl font-normal text-muted-foreground/70 ml-1.5">/100</span>
           </div>
 
-          <div className="inline-flex items-center gap-2 text-sm font-medium">
+          <div
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
+              gapSignal.verdict === "strong" &&
+                "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+              gapSignal.verdict === "moderate" &&
+                "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+              gapSignal.verdict === "weak" &&
+                "border-zinc-500/20 bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
+            )}
+          >
             <span
               className={cn(
-                "size-2 rounded-full shrink-0",
+                "size-1.5 rounded-full shrink-0",
                 gapSignal.verdict === "strong" && "bg-emerald-500",
                 gapSignal.verdict === "moderate" && "bg-amber-500",
                 gapSignal.verdict === "weak" && "bg-zinc-400 dark:bg-zinc-600",
               )}
             />
-            <span
-              className={cn(
-                gapSignal.verdict === "strong" && "text-emerald-700 dark:text-emerald-400",
-                gapSignal.verdict === "moderate" && "text-amber-700 dark:text-amber-400",
-                gapSignal.verdict === "weak" && "text-muted-foreground",
-              )}
-            >
-              {verdictLabel}
-            </span>
+            <span>{verdictLabel}</span>
           </div>
         </div>
 
@@ -86,11 +90,14 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
         </p>
 
         <div className="mt-8 border-t border-border/50 pt-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {factors.map((f) => (
-              <div key={f.label} className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">{f.label}</span>
-                <span className="text-sm font-medium text-foreground">{f.value}</span>
+              <div
+                key={f.label}
+                className="flex flex-col gap-1 rounded-xl border border-border/60 bg-muted/25 p-3.5 transition-colors hover:border-border/90"
+              >
+                <span className="text-[11px] font-medium text-muted-foreground">{f.label}</span>
+                <span className="text-sm font-semibold text-foreground tracking-tight">{f.value}</span>
               </div>
             ))}
           </div>
@@ -113,9 +120,10 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
           onClick={onOpenEvidence}
           variant="outline"
           size="sm"
-          className="h-8 rounded-lg px-3.5 text-xs font-medium cursor-pointer transition-colors hover:bg-muted shrink-0"
+          className="h-8.5 rounded-lg px-3.5 text-xs font-medium cursor-pointer shadow-2xs hover:bg-muted transition-all active:scale-[0.98] shrink-0 gap-1.5"
         >
-          See the evidence →
+          <span>See the evidence</span>
+          <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={2} />
         </Button>
       </div>
     </section>
