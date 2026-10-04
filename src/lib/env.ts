@@ -34,7 +34,8 @@ function readServerEnv(): ServerEnv {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY:
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    SERPAPI_KEY: process.env.SERPAPI_KEY,
+    SERPAPI_KEY:
+      process.env.SERPAPI_KEY || process.env.SERPAPI_API_KEY || "",
   });
 }
 

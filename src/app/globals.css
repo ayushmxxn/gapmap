@@ -96,3 +96,35 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+
+/* GapMap popup: .mapboxgl-popup-content IS the single visual container.
+   Scoped under .gapmap-popup (set via Popup className) so specificity beats
+   Mapbox's default stylesheet and no other Mapbox UI is affected. */
+.gapmap-popup .mapboxgl-popup-content {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.1);
+  padding: 12px 30px 12px 14px;
+  max-width: 260px;
+  font-family: var(--font-geist-sans);
+}
+.gapmap-popup .mapboxgl-popup-tip {
+  display: none;
+}
+.gapmap-popup .mapboxgl-popup-close-button {
+  top: 7px !important;
+  right: 9px !important;
+  width: auto;
+  height: auto;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}
+.gapmap-popup .mapboxgl-popup-close-button:hover {
+  background: transparent;
+  color: var(--foreground);
+}
