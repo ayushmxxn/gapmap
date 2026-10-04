@@ -110,36 +110,36 @@ export function ScanStudio() {
 
   return (
     <div className="flex min-h-screen min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-10 bg-white/95 dark:bg-card/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] transition-colors">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              type="button"
-              onClick={() => {
-                if (status !== "idle") {
+      {status !== "idle" && (
+        <header className="sticky top-0 z-10 bg-white/95 dark:bg-card/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] transition-colors">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={() => {
                   setStatus("idle");
                   setResult(null);
                   setError(null);
+                  setArea(12.9352, 77.6245, "");
+                  setCategoryId("");
                   window.history.replaceState(null, "", "/");
-                }
-              }}
-              className="group flex items-center gap-2.5 text-left cursor-pointer transition-opacity hover:opacity-90 shrink-0"
-            >
-              <Image
-                src="/logo.png"
-                alt="GapMap"
-                width={36}
-                height={22}
-                className="h-5.5 w-auto object-contain select-none transition-transform group-hover:scale-105"
-                priority
-                unoptimized
-              />
-              <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#111827] dark:text-foreground">
-                GapMap
-              </span>
-            </button>
+                }}
+                className="group flex items-center gap-2.5 text-left cursor-pointer transition-opacity hover:opacity-90 shrink-0"
+              >
+                <Image
+                  src="/logo.png"
+                  alt="GapMap"
+                  width={36}
+                  height={22}
+                  className="h-5.5 w-auto object-contain select-none transition-transform group-hover:scale-105"
+                  priority
+                  unoptimized
+                />
+                <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#111827] dark:text-foreground">
+                  GapMap
+                </span>
+              </button>
 
-            {status !== "idle" && (
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground truncate border-l border-border/60 pl-3">
                 <span className="font-medium text-foreground truncate max-w-44 md:max-w-xs">
                   {cleanAreaDisplay}
@@ -149,11 +149,9 @@ export function ScanStudio() {
                   {selectedCategory.label}
                 </span>
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {status !== "idle" && (
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 type="button"
                 variant="ghost"
@@ -170,15 +168,36 @@ export function ScanStudio() {
               >
                 New scan
               </Button>
-            )}
-            <ThemeToggle />
+              <ThemeToggle />
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-6 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-between px-4 py-6 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
         {status === "idle" && (
-          <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16">
+          <div className="flex w-full flex-1 flex-col justify-between">
+            {/* Top row directly on hero section page - no separate navbar */}
+            <div className="flex w-full items-center justify-between py-2 sm:py-3">
+              <div className="flex items-center gap-2.5 select-none">
+                <Image
+                  src="/logo.png"
+                  alt="GapMap"
+                  width={36}
+                  height={22}
+                  className="h-5.5 w-auto object-contain select-none"
+                  priority
+                  unoptimized
+                />
+                <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#111827] dark:text-foreground">
+                  GapMap
+                </span>
+              </div>
+
+              <ThemeToggle />
+            </div>
+
+            <div className="my-auto grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16 py-6 sm:py-10">
             {/* Left Content Column */}
             <div className="flex w-full max-w-[600px] flex-col justify-center">
               <h1 className="text-3xl sm:text-[30px] md:text-[32px] lg:text-[34px] xl:text-[48px] font-semibold tracking-[-0.035em] text-foreground leading-[1.18] text-balance">
@@ -212,6 +231,7 @@ export function ScanStudio() {
             <div className="relative w-full h-[320px] sm:h-[390px] lg:h-[480px]">
               <MapWrapper competitors={[]} mode="globe" className="h-full" />
             </div>
+          </div>
           </div>
         )}
 

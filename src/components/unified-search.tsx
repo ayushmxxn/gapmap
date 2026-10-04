@@ -188,6 +188,22 @@ export function UnifiedSearch({
   const isReady =
     !isResolving && activeCategory !== null && resolvedArea !== null;
 
+  const hasFeedback =
+    (isReady && Boolean(activeCategory) && Boolean(resolvedArea)) ||
+    isResolving ||
+    (!isResolving && resolutionFailed && Boolean(parsed.locationText)) ||
+    (!isResolving && resolutionError && Boolean(parsed.locationText)) ||
+    (showValidation &&
+      !isResolving &&
+      !parsed.businessText &&
+      !parsed.locationText) ||
+    (!isResolving &&
+      !resolutionFailed &&
+      !resolutionError &&
+      Boolean(parsed.businessText) &&
+      !parsed.locationText) ||
+    (!isResolving && !parsed.businessText && Boolean(parsed.locationText));
+
   // Handle submission
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -537,94 +553,96 @@ export function UnifiedSearch({
         />
       </div>
 
-      {/* 4. Compact Confirmation State: Fixed height for zero layout shift */}
-      <div
-        className="mt-3.5 min-h-[24px] flex items-center text-xs tracking-tight"
-        aria-live="polite"
-      >
-        {/* Valid & Ready State */}
-        {isReady && activeCategory && resolvedArea && (
-          <div className="flex items-center gap-1.5 font-medium text-foreground">
-            <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.15)] shrink-0" />
-            <span>{activeCategory.label}</span>
-            <span className="text-muted-foreground/40">·</span>
-            <span className="truncate">{resolvedArea.areaLabel}</span>
-          </div>
-        )}
-
-        {/* Resolving State */}
-        {isResolving && (
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_0_2px_rgba(245,158,11,0.15)] shrink-0" />
-            <span>Looking up location…</span>
-          </div>
-        )}
-
-        {/* Location Resolution Failed */}
-        {!isResolving && resolutionFailed && parsed.locationText && (
-          <span className="text-rose-600 dark:text-rose-400">
-            Location not found. Try a neighborhood or city name.
-          </span>
-        )}
-
-        {/* Location Network / API Error */}
-        {!isResolving && resolutionError && parsed.locationText && (
-          <span className="text-rose-600 dark:text-rose-400">
-            Unable to reach location service. Please check your connection.
-          </span>
-        )}
-
-        {/* Validation prompt when user clicks CTA without entering valid search */}
-        {showValidation && !isResolving && !parsed.businessText && !parsed.locationText && (
-          <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
-            <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
-            <span>Please enter a business and location to find opportunities</span>
-          </div>
-        )}
-
-        {/* Needs Location State */}
-        {!isResolving &&
-          !resolutionFailed &&
-          !resolutionError &&
-          parsed.businessText &&
-          !parsed.locationText && (
-            <div
-              className={cn(
-                "flex items-center gap-1.5",
-                showValidation
-                  ? "text-amber-600 dark:text-amber-400 font-medium"
-                  : "text-muted-foreground/80",
-              )}
-            >
-              {showValidation && (
-                <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
-              )}
-              <span>Add a location to continue (e.g. “in Koramangala” or “Bandra West”)</span>
+      {/* 4. Compact Confirmation State: shown naturally only when feedback/location exists */}
+      {hasFeedback && (
+        <div
+          className="mt-3 min-h-[22px] flex items-center text-xs tracking-tight animate-in fade-in duration-150"
+          aria-live="polite"
+        >
+          {/* Valid & Ready State */}
+          {isReady && activeCategory && resolvedArea && (
+            <div className="flex items-center gap-1.5 font-medium text-foreground">
+              <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.15)] shrink-0" />
+              <span>{activeCategory.label}</span>
+              <span className="text-muted-foreground/40">·</span>
+              <span className="truncate">{resolvedArea.areaLabel}</span>
             </div>
           )}
 
-        {/* Needs Business State */}
-        {!isResolving &&
-          !parsed.businessText &&
-          parsed.locationText && (
-            <div
-              className={cn(
-                "flex items-center gap-1.5",
-                showValidation
-                  ? "text-amber-600 dark:text-amber-400 font-medium"
-                  : "text-muted-foreground/80",
-              )}
-            >
-              {showValidation && (
-                <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
-              )}
-              <span>Add a business type to continue (e.g. “Cafe” or “Gym”)</span>
+          {/* Resolving State */}
+          {isResolving && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_0_2px_rgba(245,158,11,0.15)] shrink-0" />
+              <span>Looking up location…</span>
             </div>
           )}
-      </div>
+
+          {/* Location Resolution Failed */}
+          {!isResolving && resolutionFailed && parsed.locationText && (
+            <span className="text-rose-600 dark:text-rose-400">
+              Location not found. Try a neighborhood or city name.
+            </span>
+          )}
+
+          {/* Location Network / API Error */}
+          {!isResolving && resolutionError && parsed.locationText && (
+            <span className="text-rose-600 dark:text-rose-400">
+              Unable to reach location service. Please check your connection.
+            </span>
+          )}
+
+          {/* Validation prompt when user clicks CTA without entering valid search */}
+          {showValidation && !isResolving && !parsed.businessText && !parsed.locationText && (
+            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
+              <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
+              <span>Please enter a business and location to find opportunities</span>
+            </div>
+          )}
+
+          {/* Needs Location State */}
+          {!isResolving &&
+            !resolutionFailed &&
+            !resolutionError &&
+            parsed.businessText &&
+            !parsed.locationText && (
+              <div
+                className={cn(
+                  "flex items-center gap-1.5",
+                  showValidation
+                    ? "text-amber-600 dark:text-amber-400 font-medium"
+                    : "text-muted-foreground/80",
+                )}
+              >
+                {showValidation && (
+                  <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
+                )}
+                <span>Add a location to continue (e.g. “in Koramangala” or “Bandra West”)</span>
+              </div>
+            )}
+
+          {/* Needs Business State */}
+          {!isResolving &&
+            !parsed.businessText &&
+            parsed.locationText && (
+              <div
+                className={cn(
+                  "flex items-center gap-1.5",
+                  showValidation
+                    ? "text-amber-600 dark:text-amber-400 font-medium"
+                    : "text-muted-foreground/80",
+                )}
+              >
+                {showValidation && (
+                  <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
+                )}
+                <span>Add a business type to continue (e.g. “Cafe” or “Gym”)</span>
+              </div>
+            )}
+        </div>
+      )}
 
       {/* 5. Primary CTA */}
-      <div className="mt-5">
+      <div className={cn(hasFeedback ? "mt-3.5" : "mt-4.5")}>
         <LiquidMetalButton
           label="Find opportunities"
           type="submit"
@@ -636,6 +654,34 @@ export function UnifiedSearch({
           }
         />
       </div>
+
+      {/* 6. Helpful Example Guidance (Only shown when no valid search entered yet) */}
+      {!isReady && (
+        <p className="mt-3 text-xs text-muted-foreground/70 select-none">
+          Try{" "}
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("Gym in Mumbai");
+              if (showValidation) setShowValidation(false);
+            }}
+            className="text-foreground/80 hover:text-foreground underline underline-offset-3 decoration-muted-foreground/30 hover:decoration-foreground cursor-pointer transition-colors"
+          >
+            “Gym in Mumbai”
+          </button>{" "}
+          or{" "}
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("Cafe in Koramangala");
+              if (showValidation) setShowValidation(false);
+            }}
+            className="text-foreground/80 hover:text-foreground underline underline-offset-3 decoration-muted-foreground/30 hover:decoration-foreground cursor-pointer transition-colors"
+          >
+            “Cafe in Koramangala”
+          </button>
+        </p>
+      )}
     </form>
   );
 }
