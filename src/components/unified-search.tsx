@@ -430,7 +430,7 @@ export function UnifiedSearch({
               : undefined
           }
           className={cn(
-            "h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#18191e] pl-10 pr-10 text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f4f4f6] placeholder:text-[#18181b]/45 dark:placeholder:text-muted-foreground/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),inset_0_2px_4px_0_rgba(0,0,0,0.3)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1b1c22] hover:border-black/[0.09] dark:hover:border-white/[0.12] focus-visible:outline-none focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#1e1f25] focus-visible:border-black/[0.1] dark:focus-visible:border-white/[0.15] focus-visible:ring-2 focus-visible:ring-[#3B82F6]/25 dark:focus-visible:ring-[#3B82F6]/30 focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.3)]",
+            "h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#191b19] pl-10 pr-10 text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f3f4f3] placeholder:text-[#18181b]/45 dark:placeholder:text-[#949a94]/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_2px_4px_0_rgba(0,0,0,0.4)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1d201d] hover:border-black/[0.09] dark:hover:border-white/[0.13] focus-visible:outline-none focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#212421] focus-visible:border-black/[0.1] dark:focus-visible:border-white/[0.18] focus-visible:ring-2 focus-visible:ring-[#3B82F6]/25 dark:focus-visible:ring-[#3B82F6]/30 focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.4)]",
             showValidation && !isReady && "border-amber-500/50 ring-2 ring-amber-500/25 dark:border-amber-400/50 dark:ring-amber-400/25",
           )}
         />
@@ -452,7 +452,7 @@ export function UnifiedSearch({
             id="location-autocomplete-list"
             role="listbox"
             aria-label="Location suggestions"
-            className="absolute top-full left-0 right-0 z-50 mt-1.5 max-h-56 overflow-y-auto overscroll-contain rounded-[16px] border border-black/[0.06] dark:border-white/10 bg-[#f4f4f6]/98 dark:bg-[#18191e]/98 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md"
+            className="absolute top-full left-0 right-0 z-50 mt-1.5 max-h-56 overflow-y-auto overscroll-contain rounded-[16px] border border-black/[0.06] dark:border-white/10 bg-[#f4f4f6]/98 dark:bg-[#1a1c1a]/98 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.04)] dark:shadow-[0_16px_48px_-8px_rgba(0,0,0,0.7)] backdrop-blur-md"
           >
             {suggestions.map((item, idx) => {
               const isSelected = activeSuggestionIndex === idx;

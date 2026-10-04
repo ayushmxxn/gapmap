@@ -182,6 +182,7 @@ export function LiquidMetalButton({
         }}
       >
         <div
+          className="rounded-[100px] dark:ring-1 dark:ring-white/[0.14] dark:shadow-[0_4px_24px_-2px_rgba(0,0,0,0.6)]"
           style={{
             position: "relative",
             width: `${dimensions.width}px`,
