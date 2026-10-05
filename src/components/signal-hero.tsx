@@ -62,14 +62,14 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-tight",
               isCityScope
-                ? "border border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-400"
+                ? "border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-foreground"
                 : "border border-border/80 bg-muted/50 text-muted-foreground",
             )}
           >
             <span
               className={cn(
                 "size-1.5 rounded-full shrink-0",
-                isCityScope ? "bg-sky-500" : "bg-muted-foreground/70",
+                isCityScope ? "bg-foreground/70" : "bg-muted-foreground/70",
               )}
             />
             <span>{scopeLabel}</span>

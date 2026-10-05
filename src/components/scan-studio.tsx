@@ -138,6 +138,7 @@ export function ScanStudio() {
                   alt="GapMap"
                   width={36}
                   height={22}
+                  style={{ width: "auto" }}
                   className="h-5.5 w-auto object-contain select-none transition-transform group-hover:scale-105"
                   priority
                   unoptimized
@@ -192,6 +193,7 @@ export function ScanStudio() {
                   alt="GapMap"
                   width={36}
                   height={22}
+                  style={{ width: "auto" }}
                   className="h-5.5 w-auto object-contain select-none"
                   priority
                   unoptimized
@@ -247,53 +249,43 @@ export function ScanStudio() {
           <div className="flex flex-col gap-6 py-4 sm:py-6" aria-live="polite">
             <div className="relative grid gap-8 lg:grid-cols-[1.1fr_1fr] items-stretch">
               {/* Left Card Skeleton: Mirrors SignalSummary */}
-              <div className="flex min-h-[380px] sm:min-h-[440px] lg:min-h-[460px] flex-col justify-between rounded-2xl border border-border/60 bg-card/60 p-6 md:p-8 animate-pulse shadow-xs">
+              <div className="flex min-h-[380px] sm:min-h-[440px] lg:min-h-[460px] flex-col justify-between rounded-2xl border border-neutral-200 dark:border-border bg-white dark:bg-card p-6 md:p-8 shadow-xs animate-pulse">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3.5 w-24 rounded bg-muted" />
-                    <div className="size-1 rounded-full bg-muted-foreground/30" />
-                    <div className="h-3.5 w-16 rounded bg-muted" />
+                    <div className="h-3.5 w-24 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                    <div className="size-1 rounded-full bg-[#d4d4d4] dark:bg-zinc-700" />
+                    <div className="h-3.5 w-16 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                   </div>
-                  <div className="mt-4 h-7 w-3/4 rounded-lg bg-muted" />
-                  <div className="mt-2 h-7 w-1/2 rounded-lg bg-muted" />
+                  <div className="mt-4 h-7 w-3/4 rounded-lg bg-[#e5e5e5] dark:bg-zinc-800" />
+                  <div className="mt-2 h-7 w-1/2 rounded-lg bg-[#e5e5e5] dark:bg-zinc-800" />
 
                   <div className="mt-6 flex items-baseline gap-4">
-                    <div className="h-14 w-20 rounded-xl bg-muted" />
-                    <div className="h-5 w-28 rounded-md bg-muted" />
+                    <div className="h-14 w-20 rounded-xl bg-[#e5e5e5] dark:bg-zinc-800" />
+                    <div className="h-5 w-28 rounded-md bg-[#e8e8e8] dark:bg-zinc-800" />
                   </div>
 
-                  <div className="mt-6 space-y-2 border-t border-border/40 pt-4">
-                    <div className="h-3.5 w-full rounded bg-muted/80" />
-                    <div className="h-3.5 w-4/5 rounded bg-muted/80" />
+                  <div className="mt-6 space-y-2.5 border-t border-neutral-200 dark:border-border/60 pt-4">
+                    <div className="h-3.5 w-full rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                    <div className="h-3.5 w-4/5 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                   </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-3 gap-3 border-t border-border/40 pt-6">
-                  <div className="h-12 rounded-xl bg-muted/60" />
-                  <div className="h-12 rounded-xl bg-muted/60" />
-                  <div className="h-12 rounded-xl bg-muted/60" />
+                <div className="mt-8 grid grid-cols-3 gap-3 border-t border-neutral-200 dark:border-border/60 pt-6">
+                  <div className="h-12 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-[#f2f2f2] dark:bg-zinc-800/80" />
+                  <div className="h-12 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-[#f2f2f2] dark:bg-zinc-800/80" />
+                  <div className="h-12 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-[#f2f2f2] dark:bg-zinc-800/80" />
                 </div>
               </div>
 
               {/* Right Card Skeleton: Mirrors Local Map */}
-              <div className="relative flex h-[320px] sm:h-[400px] lg:h-[460px] min-h-[320px] sm:min-h-[400px] lg:min-h-[460px] w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-muted/20 p-6 animate-pulse shadow-xs">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.08)_0,transparent_70%)]" />
-                <div className="size-24 rounded-full border border-primary/20 bg-primary/5" />
-                <div className="mt-4 h-3 w-32 rounded-full bg-muted" />
-              </div>
-
-              {/* Center Status Badge Overlay */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
-                <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-border/80 bg-background/95 px-5 py-3 shadow-lg backdrop-blur-md transition-all">
-                  <span className="relative flex size-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                    <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
-                  </span>
-                  <p className="text-xs sm:text-sm font-medium text-foreground">
-                    Scanning <span className="font-semibold text-primary">{cleanAreaDisplay}</span> for{" "}
-                    <span className="font-semibold">{selectedCategory.label.toLowerCase()}</span> opportunities…
-                  </p>
+              <div className="relative flex h-[320px] sm:h-[400px] lg:h-[460px] min-h-[320px] sm:min-h-[400px] lg:min-h-[460px] w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 dark:border-border bg-[#fafafa] dark:bg-zinc-900/60 p-6 shadow-xs animate-pulse">
+                {/* Concentric scan target - strictly neutral monochrome, zero blue */}
+                <div className="relative flex items-center justify-center">
+                  <div className="size-40 rounded-full border border-neutral-300/80 dark:border-zinc-800 bg-[#f2f2f2]/70 dark:bg-zinc-800/30" />
+                  <div className="absolute size-24 rounded-full border border-neutral-300 dark:border-zinc-700 bg-[#e8e8e8] dark:bg-zinc-800/70" />
+                  <div className="absolute size-10 rounded-full bg-[#d4d4d4] dark:bg-zinc-600" />
                 </div>
+                <div className="mt-6 h-3.5 w-32 rounded-full bg-[#e5e5e5] dark:bg-zinc-800" />
               </div>
             </div>
           </div>

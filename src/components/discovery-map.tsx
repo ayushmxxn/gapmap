@@ -110,14 +110,15 @@ export function DiscoveryMap({
   const [globeProjection, setGlobeProjection] = React.useState<Projection>("globe");
   const projection = isLocal ? "mercator" : globeProjection;
   const projRef = React.useRef<Projection>(projection);
+  const hasInteractedRef = React.useRef(false);
+  const firstArea = React.useRef(true);
+  const projectionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     projRef.current = projection;
   }, [projection]);
 
   const [selected, setSelected] = React.useState<Competitor | null>(null);
-  const hasInteractedRef = React.useRef(false);
-  const firstArea = React.useRef(true);
 
   // Measurement states for reliable mounting
   const [dimensions, setDimensions] = React.useState<{ width: number; height: number } | null>(null);
@@ -196,6 +197,29 @@ export function DiscoveryMap({
       }
     },
     [],
+  );
+
+  const handleMove = React.useCallback(
+    (e: { target: { getZoom: () => number; isStyleLoaded?: () => boolean } & GlobeCapableMap }) => {
+      if (isLocal) return;
+      const z = e.target.getZoom();
+      const rawMap = e.target;
+      const nextProj: Projection | null =
+        z >= FLAT_ZOOM && projRef.current !== "mercator"
+          ? "mercator"
+          : z <= ROUND_ZOOM && projRef.current !== "globe"
+            ? "globe"
+            : null;
+      if (!nextProj) return;
+      if (projectionTimerRef.current) clearTimeout(projectionTimerRef.current);
+      projectionTimerRef.current = setTimeout(() => {
+        if (!rawMap.isStyleLoaded?.()) return;
+        projRef.current = nextProj;
+        setGlobeProjection(nextProj);
+        rawMap.setProjection?.(nextProj);
+      }, 150);
+    },
+    [isLocal],
   );
 
   /* Re-apply projection + atmosphere whenever the style reloads
@@ -497,20 +521,7 @@ export function DiscoveryMap({
           onRotateStart={() => {
             hasInteractedRef.current = true;
           }}
-          onMove={(e) => {
-            if (isLocal) return;
-            const z = e.target.getZoom();
-            const map = e.target as unknown as GlobeCapableMap;
-            if (z >= FLAT_ZOOM && projRef.current !== "mercator") {
-              projRef.current = "mercator";
-              setGlobeProjection("mercator");
-              map.setProjection?.("mercator");
-            } else if (z <= ROUND_ZOOM && projRef.current !== "globe") {
-              projRef.current = "globe";
-              setGlobeProjection("globe");
-              map.setProjection?.("globe");
-            }
-          }}
+          onMove={handleMove}
           onClick={async (e) => {
             hasInteractedRef.current = true;
             const clickLat = Number(e.lngLat.lat.toFixed(4));
