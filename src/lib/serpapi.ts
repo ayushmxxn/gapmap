@@ -1,6 +1,19 @@
 import { z } from "zod";
 import { getJson } from "serpapi";
 import { serverEnv } from "@/lib/env";
+import {
+  clearInFlightPlaceReviews,
+  clearInFlightTrends,
+  getCachedPlaceReviews,
+  getCachedTrends,
+  getInFlightPlaceReviews,
+  getInFlightTrends,
+  getTrendsCacheKey,
+  setCachedPlaceReviews,
+  setCachedTrends,
+  setInFlightPlaceReviews,
+  setInFlightTrends,
+} from "@/lib/scan-cache";
 
 /**
  * Server-side SerpApi client. Never import from client components.
@@ -335,20 +348,36 @@ export async function fetchMapsPlaces(
 export async function fetchPlaceReviews(
   dataId: string,
 ): Promise<PlaceReviews> {
-  const raw = await callSerpApi(
-    {
-      engine: "google_maps_reviews",
-      data_id: dataId,
-      hl: "en",
-    },
-    `Reviews: ${dataId}`,
-  );
-  const parsed = reviewsResponseSchema.safeParse(raw);
-  if (!parsed.success) {
-    logSafeError(`Reviews schema validation failed for ${dataId}`, parsed.error);
-    return { topics: [], reviews: [] };
-  }
-  return parsed.data;
+  const cached = getCachedPlaceReviews(dataId);
+  if (cached) return cached;
+
+  const inFlight = getInFlightPlaceReviews(dataId);
+  if (inFlight) return inFlight;
+
+  const promise = (async () => {
+    try {
+      const raw = await callSerpApi(
+        {
+          engine: "google_maps_reviews",
+          data_id: dataId,
+          hl: "en",
+        },
+        `Reviews: ${dataId}`,
+      );
+      const parsed = reviewsResponseSchema.safeParse(raw);
+      if (!parsed.success) {
+        logSafeError(`Reviews schema validation failed for ${dataId}`, parsed.error);
+        return { topics: [], reviews: [] };
+      }
+      setCachedPlaceReviews(dataId, parsed.data);
+      return parsed.data;
+    } finally {
+      clearInFlightPlaceReviews(dataId);
+    }
+  })();
+
+  setInFlightPlaceReviews(dataId, promise);
+  return promise;
 }
 
 export interface TrendsSearchInput {
@@ -361,22 +390,40 @@ export interface TrendsSearchInput {
 export async function fetchTrends(
   input: TrendsSearchInput,
 ): Promise<TrendsTimelinePoint[]> {
-  const raw = await callSerpApi(
-    {
-      engine: "google_trends",
-      data_type: "TIMESERIES",
-      q: input.q,
-      geo: input.geo,
-      date: input.date,
-    },
-    `Trends: ${input.q}`,
-  );
-  const parsed = trendsResponseSchema.safeParse(raw);
-  if (!parsed.success) {
-    logSafeError("Trends schema validation failed", parsed.error);
-    return [];
-  }
-  return parsed.data.interest_over_time?.timeline_data ?? [];
+  const cacheKey = getTrendsCacheKey(input);
+  const cached = getCachedTrends(cacheKey);
+  if (cached) return cached;
+
+  const inFlight = getInFlightTrends(cacheKey);
+  if (inFlight) return inFlight;
+
+  const promise = (async () => {
+    try {
+      const raw = await callSerpApi(
+        {
+          engine: "google_trends",
+          data_type: "TIMESERIES",
+          q: input.q,
+          geo: input.geo,
+          date: input.date,
+        },
+        `Trends: ${input.q}`,
+      );
+      const parsed = trendsResponseSchema.safeParse(raw);
+      if (!parsed.success) {
+        logSafeError("Trends schema validation failed", parsed.error);
+        return [];
+      }
+      const timeline = parsed.data.interest_over_time?.timeline_data ?? [];
+      setCachedTrends(cacheKey, timeline);
+      return timeline;
+    } finally {
+      clearInFlightTrends(cacheKey);
+    }
+  })();
+
+  setInFlightTrends(cacheKey, promise);
+  return promise;
 }
 
 export function isSerpApiConfigured(): boolean {
