@@ -42,6 +42,13 @@ export function BusinessPickerModal({
 
   const inputRef = React.useRef<HTMLInputElement>(null);
   const modalRef = React.useRef<HTMLDivElement>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Keep a stable ref to avoid effect recreation on every keystroke
+  const stateRef = React.useRef({ search, selectedCategory });
+  React.useEffect(() => {
+    stateRef.current = { search, selectedCategory };
+  }, [search, selectedCategory]);
 
   const handleClose = React.useCallback(() => {
     playSound("close");
@@ -50,28 +57,49 @@ export function BusinessPickerModal({
     onClose();
   }, [onClose]);
 
-  // Handle escape, focus trap, and background scroll lock
+  // Reset scroll position to top whenever modal opens or view changes
+  React.useEffect(() => {
+    if (isOpen) {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+    }
+  }, [isOpen, selectedCategory]);
+
+  // Handle escape, focus trap, and bulletproof background scroll lock
   React.useEffect(() => {
     if (!isOpen) return;
 
     const triggerEl = triggerRef?.current;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
+    const scrollY = window.scrollY;
+    const prevPosition = document.body.style.position;
+    const prevTop = document.body.style.top;
+    const prevWidth = document.body.style.width;
+    const prevOverflow = document.body.style.overflow;
 
-    const timer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, 50);
+    // Strict mobile scroll lock preventing background page jumping
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+
+    // Auto-focus input on desktop only; avoid jarring keyboard popup on mobile
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+    let timer: NodeJS.Timeout | null = null;
+    if (!isMobile) {
+      timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        if (search) {
+        if (stateRef.current.search) {
           setSearch("");
           return;
         }
-        if (selectedCategory) {
+        if (stateRef.current.selectedCategory) {
           setSelectedCategory(null);
           return;
         }
@@ -103,13 +131,16 @@ export function BusinessPickerModal({
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      clearTimeout(timer);
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
+      if (timer) clearTimeout(timer);
+      document.body.style.position = prevPosition;
+      document.body.style.top = prevTop;
+      document.body.style.width = prevWidth;
+      document.body.style.overflow = prevOverflow;
+      window.scrollTo(0, scrollY);
       document.removeEventListener("keydown", handleKeyDown);
       triggerEl?.focus();
     };
-  }, [isOpen, handleClose, triggerRef, search, selectedCategory]);
+  }, [isOpen, handleClose, triggerRef]);
 
   const cleanSearch = search.trim().toLowerCase();
   const isSearching = cleanSearch.length > 0;
@@ -162,7 +193,7 @@ export function BusinessPickerModal({
       aria-modal="true"
       aria-labelledby="modal-title"
       data-cuelume-close
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-150 touch-none pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]"
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-150 pt-[max(0.75rem,env(safe-area-inset-top,0px))] sm:pt-6 overflow-hidden overscroll-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleClose();
@@ -171,10 +202,10 @@ export function BusinessPickerModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-[460px] flex flex-col rounded-[20px] border border-black/[0.08] dark:border-white/10 bg-background p-4 sm:p-5 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_60px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl animate-in zoom-in-95 duration-150"
+        className="w-full max-w-[460px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[520px] flex flex-col rounded-[22px] border border-black/[0.08] dark:border-white/10 bg-background p-4 sm:p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl animate-in zoom-in-95 duration-150 overflow-hidden"
       >
         {/* Top Header */}
-        <div className="flex items-center justify-between pb-3">
+        <div className="flex items-center justify-between pb-2.5 sm:pb-3 shrink-0">
           <h2
             id="modal-title"
             className="text-sm font-semibold tracking-tight text-foreground"
@@ -193,7 +224,7 @@ export function BusinessPickerModal({
         </div>
 
         {/* Homepage-matched Search Input */}
-        <div className="relative mb-3.5 flex items-center">
+        <div className="relative mb-3 sm:mb-3.5 flex items-center shrink-0">
           <HugeiconsIcon
             icon={Search01Icon}
             size={16}
@@ -212,8 +243,11 @@ export function BusinessPickerModal({
             onKeyDown={handleInputKeyDown}
             placeholder="Search a business type..."
             autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
             spellCheck={false}
-            className="h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#191b19] pl-10 pr-10 text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f3f4f3] placeholder:text-[#18181b]/45 dark:placeholder:text-[#949a94]/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_2px_4px_0_rgba(0,0,0,0.4)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1d201d] hover:border-black/[0.09] dark:hover:border-white/[0.13] outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#212421] focus-visible:border-black/[0.12] dark:focus-visible:border-white/[0.18] focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.4)]"
+            enterKeyHint="search"
+            className="h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#191b19] pl-10 pr-10 text-[16px] sm:text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f3f4f3] placeholder:text-[#18181b]/45 dark:placeholder:text-[#949a94]/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_2px_4px_0_rgba(0,0,0,0.4)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1d201d] hover:border-black/[0.09] dark:hover:border-white/[0.13] outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#212421] focus-visible:border-black/[0.12] dark:focus-visible:border-white/[0.18] focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.4)]"
           />
           {search.length > 0 && (
             <button
@@ -230,8 +264,11 @@ export function BusinessPickerModal({
           )}
         </div>
 
-        {/* Content Area */}
-        <div>
+        {/* Scrollable Content Area */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-0.5"
+        >
           {/* 1. SEARCH RESULTS MODE */}
           {isSearching ? (
             <div className="space-y-2">
@@ -252,7 +289,7 @@ export function BusinessPickerModal({
               )}
 
               {matchingItems.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2 max-h-[260px] overflow-y-auto overscroll-contain pr-0.5">
+                <div className="grid grid-cols-2 gap-2">
                   {matchingItems.map((item) => {
                     const isSelected =
                       currentBusinessLabel?.toLowerCase() ===
@@ -314,7 +351,7 @@ export function BusinessPickerModal({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[260px] overflow-y-auto overscroll-contain pr-0.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {selectedCategory.items.map((item) => {
                   const isSelected =
                     currentBusinessLabel?.toLowerCase() ===
@@ -382,16 +419,16 @@ export function BusinessPickerModal({
                       key={group.name}
                       type="button"
                       onClick={() => setSelectedCategory(group)}
-                      className="h-11 px-3.5 rounded-xl flex items-center justify-between text-left bg-[#f2f2f2] hover:bg-[#e8e8e8] text-[#18181b] dark:bg-[#1a1c1a] dark:hover:bg-[#232623] dark:text-[#d2d6d2] transition-all cursor-pointer group active:scale-[0.98]"
+                      className="min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-between text-left bg-[#f2f2f2] hover:bg-[#e8e8e8] text-[#18181b] dark:bg-[#1a1c1a] dark:hover:bg-[#232623] dark:text-[#d2d6d2] transition-all cursor-pointer group active:scale-[0.98]"
                     >
-                      <span className="text-xs sm:text-[13px] font-medium truncate pr-1">
+                      <span className="text-xs sm:text-[13px] font-medium leading-snug pr-1">
                         {group.name}
                       </span>
                       <HugeiconsIcon
                         icon={ArrowRight01Icon}
                         size={14}
                         strokeWidth={2}
-                        className="text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0"
+                        className="text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 ml-auto"
                       />
                     </button>
                   ))}

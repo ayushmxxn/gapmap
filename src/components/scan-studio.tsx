@@ -217,7 +217,7 @@ export function ScanStudio() {
               <ThemeToggle />
             </div>
 
-            <div className="my-auto grid w-full items-center lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16 pt-5 pb-2 sm:py-6">
+            <div className="my-auto grid w-full items-center lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16 pt-10 pb-3 sm:py-6">
             {/* Left Content Column */}
             <div className="flex w-full max-w-[600px] flex-col justify-center">
               <h1 className="text-3xl sm:text-[30px] md:text-[32px] lg:text-[34px] xl:text-[48px] font-semibold tracking-[-0.035em] text-foreground leading-[1.18] text-balance">
