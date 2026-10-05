@@ -84,16 +84,29 @@ const CompetitorMarker = React.memo(function CompetitorMarker({
       anchor="bottom"
       onClick={handleClick}
     >
-      <span
+      <button
+        type="button"
+        aria-label={`View competitor ${competitor.title}, rating: ${competitor.rating != null ? competitor.rating.toFixed(1) : "unrated"}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(competitor);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            onSelect(competitor);
+          }
+        }}
         className={cn(
-          "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform",
+          "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           isSelected && "scale-125 ring-2 ring-white dark:ring-black",
         )}
         style={{ backgroundColor: pinColor(competitor.rating) }}
         title={competitor.title}
       >
         {competitor.rating != null ? competitor.rating.toFixed(1) : "–"}
-      </span>
+      </button>
     </Marker>
   );
 });
@@ -158,20 +171,40 @@ export function DiscoveryMap({
     setSelected(c);
   }, []);
 
+  React.useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelected(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
+
   // Measurement states for reliable mounting
   const [dimensions, setDimensions] = React.useState<{ width: number; height: number } | null>(null);
   const [mapError, setMapError] = React.useState(false);
 
   const isDark = mounted && resolvedTheme === "dark";
   const mapStyle = MAPBOX_STYLE;
+  const isValidCenter =
+    Number.isFinite(lat) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    Number.isFinite(lng) &&
+    lng >= -180 &&
+    lng <= 180;
+  const safeLat = isValidCenter ? lat : INDIA_CENTER[1];
+  const safeLng = isValidCenter ? lng : INDIA_CENTER[0];
 
   const radiusGeoJson = React.useMemo(
     () =>
-      circle([lng, lat], SCAN_RADIUS_KM, {
+      circle([safeLng, safeLat], SCAN_RADIUS_KM, {
         units: "kilometers",
         steps: 64,
       }),
-    [lat, lng],
+    [safeLat, safeLng],
   );
 
   const applySettings = React.useCallback(
@@ -430,8 +463,8 @@ export function DiscoveryMap({
           ref={mapRef}
           mapboxAccessToken={getMapboxToken()}
           initialViewState={{
-            longitude: isLocal ? lng : INDIA_CENTER[0],
-            latitude: isLocal ? lat : INDIA_CENTER[1],
+            longitude: isLocal ? safeLng : INDIA_CENTER[0],
+            latitude: isLocal ? safeLat : INDIA_CENTER[1],
             zoom: isLocal
               ? scope === "city"
                 ? 11.8
@@ -570,18 +603,29 @@ export function DiscoveryMap({
                   setArea(p.lat, p.lng, p.label);
                 }}
               >
-                <span className="flex cursor-pointer flex-col items-center gap-1">
+                <button
+                  type="button"
+                  aria-label={`Select location preset: ${p.label}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    hasInteractedRef.current = true;
+                    setArea(p.lat, p.lng, p.label);
+                  }}
+                  className="flex cursor-pointer flex-col items-center gap-1 bg-transparent border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:rounded-full"
+                >
                   <span className="block size-2.5 rounded-full bg-primary ring-4 ring-primary/20 transition-transform hover:scale-125" />
                   <span className="rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap text-foreground backdrop-blur">
                     {p.label.split(",")[0]}
                   </span>
-                </span>
+                </button>
               </Marker>
             ))}
 
-          <Marker longitude={lng} latitude={lat} anchor="center">
-            <span className="block size-3 rounded-full bg-blue-600 ring-4 ring-blue-600/20" />
-          </Marker>
+          {isValidCenter && (
+            <Marker longitude={safeLng} latitude={safeLat} anchor="center">
+              <span className="block size-3 rounded-full bg-blue-600 ring-4 ring-blue-600/20" />
+            </Marker>
+          )}
 
           {competitors.map(
             (c) =>
@@ -642,6 +686,14 @@ export function DiscoveryMap({
           <p className="mt-1 max-w-xs text-muted-foreground/80">
             Opportunity scanner and analytics remain fully operational.
           </p>
+          <button
+            type="button"
+            data-cuelume-tap
+            onClick={() => setMapError(false)}
+            className="mt-3 rounded-lg px-3 py-1.5 text-xs font-medium bg-background border border-border text-foreground hover:bg-muted cursor-pointer transition-colors shadow-xs active:scale-[0.98]"
+          >
+            Retry map
+          </button>
         </div>
       ) : (
         <div className="flex h-full w-full items-center justify-center rounded-2xl bg-muted/20 text-xs text-muted-foreground/70">
@@ -655,6 +707,7 @@ export function DiscoveryMap({
       {!isLocal && projection === "mercator" && (
         <button
           type="button"
+          aria-label="Switch projection to globe view"
           onClick={() => {
             const map = mapRef.current?.getMap() as unknown as
               | {
@@ -674,10 +727,10 @@ export function DiscoveryMap({
               essential: true,
             });
           }}
-          className="absolute top-3 right-3 flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1.5 text-xs font-medium shadow backdrop-blur hover:bg-muted"
+          className="absolute top-3 right-3 flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1.5 text-xs font-medium shadow backdrop-blur hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <HugeiconsIcon icon={GlobalIcon} size={14} strokeWidth={2} />
-          Globe
+          <span>Globe</span>
         </button>
       )}
     </div>

@@ -35,25 +35,60 @@ export function EvidenceSheet({
   meta: { lat: number; lng: number; areaLabel: string; categoryId: string };
 }) {
   const closeRef = React.useRef<HTMLButtonElement>(null);
+  const asideRef = React.useRef<HTMLElement>(null);
+  const triggerElRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
     if (!open) return;
-    closeRef.current?.focus();
+
+    triggerElRef.current = document.activeElement as HTMLElement | null;
+
+    const timer = setTimeout(() => {
+      closeRef.current?.focus();
+    }, 50);
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
         playSound("close");
         onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && asideRef.current) {
+        const focusableEls = asideRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusableEls.length === 0) return;
+        const firstEl = focusableEls[0];
+        const lastEl = focusableEls[focusableEls.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstEl) {
+            e.preventDefault();
+            lastEl?.focus();
+          }
+        } else {
+          if (document.activeElement === lastEl) {
+            e.preventDefault();
+            firstEl?.focus();
+          }
+        }
       }
     };
+
     document.addEventListener("keydown", onKey);
     const prevBody = document.body.style.overflow;
     const prevHtml = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
+
     return () => {
+      clearTimeout(timer);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevBody;
       document.documentElement.style.overflow = prevHtml;
+      triggerElRef.current?.focus();
     };
   }, [open, onClose]);
 
@@ -77,9 +112,10 @@ export function EvidenceSheet({
         )}
       />
       <aside
+        ref={asideRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Evidence and supporting analysis"
+        aria-labelledby="evidence-sheet-title"
         className={cn(
           "absolute top-0 right-0 flex h-full w-full max-w-lg md:max-w-xl flex-col border-l border-border/80 bg-background shadow-xl transition-transform duration-250 ease-out",
           open ? "translate-x-0" : "translate-x-full",
@@ -88,7 +124,7 @@ export function EvidenceSheet({
         {/* Sticky compact header */}
         <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border/60 bg-background/95 backdrop-blur-sm px-6 py-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))]">
           <div className="min-w-0 pr-4">
-            <h2 className="text-sm font-semibold text-foreground tracking-tight">Evidence &amp; analysis</h2>
+            <h2 id="evidence-sheet-title" className="text-sm font-semibold text-foreground tracking-tight">Evidence &amp; analysis</h2>
             <p className="text-xs font-medium text-foreground/80 truncate mt-0.5">
               {result.category.label} in {result.area.label}
             </p>
@@ -102,7 +138,7 @@ export function EvidenceSheet({
             data-cuelume-close
             onClick={onClose}
             aria-label="Close evidence panel"
-            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 cursor-pointer shrink-0 mt-0.5"
+            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 cursor-pointer shrink-0 mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={2} />
           </button>

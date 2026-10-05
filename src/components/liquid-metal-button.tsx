@@ -81,6 +81,10 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
       document.head.appendChild(style);
     }
 
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const loadShader = async () => {
       try {
         if (shaderRef.current) {
@@ -105,7 +109,7 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
               u_offsetY: -0.1,
             },
             undefined,
-            0.6,
+            prefersReducedMotion ? 0 : 0.6,
           );
         }
       } catch (error) {
@@ -126,13 +130,23 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
   const handleMouseEnter = () => {
     if (disabled) return;
     setIsHovered(true);
-    shaderMount.current?.setSpeed?.(1);
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!prefersReducedMotion) {
+      shaderMount.current?.setSpeed?.(1);
+    }
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
     setIsPressed(false);
-    shaderMount.current?.setSpeed?.(0.6);
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!prefersReducedMotion) {
+      shaderMount.current?.setSpeed?.(0.6);
+    }
   };
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -141,7 +155,11 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
       return;
     }
 
-    if (shaderMount.current?.setSpeed) {
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (!prefersReducedMotion && shaderMount.current?.setSpeed) {
       shaderMount.current.setSpeed(2.4);
       setTimeout(() => {
         if (isHovered) {
@@ -152,7 +170,7 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
       }, 300);
     }
 
-    if (buttonRef.current) {
+    if (!prefersReducedMotion && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -352,6 +370,7 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
               overflow: "hidden",
               borderRadius: "100px",
             }}
+            className="outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={label}
           >
             {ripples.map((ripple) => (

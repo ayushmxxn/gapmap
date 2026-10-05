@@ -16,7 +16,7 @@
   --secondary: #f2f2f3;
   --secondary-foreground: #18181b;
   --muted: #f2f2f3;
-  --muted-foreground: #6b7280;
+  --muted-foreground: #52525b;
   --accent: #f2f2f3;
   --accent-foreground: #111827;
   --destructive: oklch(0.577 0.245 27.325);
@@ -107,6 +107,20 @@
     min-height: 100vh;
     min-height: 100dvh;
     touch-action: manipulation;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

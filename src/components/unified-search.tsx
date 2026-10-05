@@ -548,7 +548,7 @@ export function UnifiedSearch({
           aria-haspopup="dialog"
           className={cn(
             "transition-all duration-150 font-medium",
-            !isMoreActive && "text-muted-foreground hover:text-foreground",
+            !isMoreActive && "text-[#374151] dark:text-[#d1d5db] hover:text-[#18181B] dark:hover:text-foreground",
           )}
         >
           {isMoreActive && activeCategory && !isPredefinedSelected
@@ -672,7 +672,7 @@ export function UnifiedSearch({
 
       {/* 6. Helpful Example Guidance (Only shown when no valid search entered yet) */}
       {!isReady && (
-        <p className="mt-2.5 sm:mt-3 text-[11.5px] sm:text-xs text-muted-foreground/60 select-none">
+        <p className="mt-2.5 sm:mt-3 text-[11.5px] sm:text-xs text-muted-foreground select-none">
           Try{" "}
           <button
             type="button"
@@ -680,7 +680,7 @@ export function UnifiedSearch({
               setQuery("Gym in Mumbai");
               if (showValidation) setShowValidation(false);
             }}
-            className="text-foreground/75 hover:text-foreground underline underline-offset-3 decoration-muted-foreground/30 hover:decoration-foreground cursor-pointer transition-colors"
+            className="text-foreground font-medium underline underline-offset-3 decoration-muted-foreground/50 hover:decoration-foreground cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xs"
           >
             “Gym in Mumbai”
           </button>{" "}
@@ -691,7 +691,7 @@ export function UnifiedSearch({
               setQuery("Cafe in Koramangala");
               if (showValidation) setShowValidation(false);
             }}
-            className="text-foreground/75 hover:text-foreground underline underline-offset-3 decoration-muted-foreground/30 hover:decoration-foreground cursor-pointer transition-colors"
+            className="text-foreground font-medium underline underline-offset-3 decoration-muted-foreground/50 hover:decoration-foreground cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xs"
           >
             “Cafe in Koramangala”
           </button>

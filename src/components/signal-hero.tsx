@@ -44,8 +44,11 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
   const isCityScope = result.scope?.type === "city" || result.area.scope === "city";
 
   return (
-    <section className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-6 sm:p-7 xl:p-8 shadow-xs h-full">
+    <section aria-labelledby="signal-summary-heading" className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-6 sm:p-7 xl:p-8 shadow-xs h-full">
       <div>
+        <h2 id="signal-summary-heading" className="sr-only">
+          Opportunity Analysis for {result.category.label} in {result.area.label}
+        </h2>
         {/* 1. Context: Location + Business analyzed */}
         <div className="flex items-center gap-1.5 text-xs sm:text-[13px] text-muted-foreground font-medium truncate">
           <span className="font-semibold text-foreground truncate max-w-72 sm:max-w-md">{result.area.label}</span>

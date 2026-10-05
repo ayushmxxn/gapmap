@@ -30,11 +30,28 @@ function useUrlSync() {
   const setError = useAppStore((s) => s.setError);
 
   React.useEffect(() => {
-    const lat = Number(params.get("lat"));
-    const lng = Number(params.get("lng"));
+    const rawLat = params.get("lat");
+    const rawLng = params.get("lng");
     const cat = params.get("cat");
     const area = params.get("area");
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !cat || !area) return;
+    if (!cat || !area || rawLat === null || rawLng === null) return;
+
+    const lat = Number(rawLat);
+    const lng = Number(rawLng);
+
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180
+    ) {
+      setStatus("error");
+      setError("Invalid location coordinates in link. Please select a valid location.");
+      return;
+    }
+
     const resolvedCategory = resolveCategory(cat);
     if (!resolvedCategory) return;
     setArea(lat, lng, area);
@@ -147,7 +164,7 @@ export function ScanStudio() {
               >
                 <Image
                   src="/logo.png"
-                  alt="GapMap"
+                  alt="GapMap - Commercial gap analysis and market feasibility scanner"
                   width={36}
                   height={22}
                   style={{ width: "auto" }}
@@ -207,7 +224,7 @@ export function ScanStudio() {
               <div className="flex items-center gap-2.5 select-none">
                 <Image
                   src="/logo.png"
-                  alt="GapMap"
+                  alt="GapMap - Commercial gap analysis and market feasibility scanner"
                   width={36}
                   height={22}
                   style={{ width: "auto" }}
@@ -264,6 +281,9 @@ export function ScanStudio() {
 
         {status === "loading" && (
           <div className="w-full pt-2 sm:pt-3 lg:pt-3.5 pb-4 sm:pb-6" aria-live="polite">
+            <div className="sr-only" role="status">
+              Analyzing neighborhood market, competition, and search demand…
+            </div>
             <div className="grid gap-5 lg:gap-6 xl:gap-7 lg:grid-cols-[1fr_1.2fr] items-stretch w-full lg:h-[clamp(440px,calc(100dvh-6.5rem),520px)]">
               {/* Left Card Skeleton: Mirrors SignalSummary */}
               <div className="flex flex-col justify-between rounded-2xl border border-neutral-200 dark:border-border bg-white dark:bg-card p-6 sm:p-7 xl:p-8 shadow-xs animate-pulse">
@@ -327,16 +347,61 @@ export function ScanStudio() {
         )}
 
         {status === "error" && (
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-6 text-xs text-muted-foreground my-8">
-            <p className="font-semibold text-foreground text-sm">
+          <div role="alert" aria-live="assertive" className="w-full max-w-lg mx-auto my-12 rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-xs text-center animate-in fade-in-0 duration-200">
+            <div className="mx-auto flex size-11 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 mb-3.5">
+              <span className="size-2.5 rounded-full bg-rose-500 shadow-[0_0_0_4px_rgba(244,63,94,0.18)]" />
+            </div>
+
+            <h2 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">
               Scan could not be completed
+            </h2>
+
+            <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
+              {error ?? "We were unable to analyze this market right now. Please check your connection and try again."}
             </p>
-            <p className="mt-1">{error ?? "Please try again."}</p>
+
+            <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              <Button
+                type="button"
+                data-cuelume-tap
+                onClick={() => {
+                  if (lat && lng && categoryId && areaLabel) {
+                    runScan(lat, lng, categoryId, areaLabel);
+                  } else {
+                    setStatus("idle");
+                    setError(null);
+                  }
+                }}
+                className="h-9 px-4 rounded-xl text-xs font-medium cursor-pointer shadow-xs active:scale-[0.98] transition-transform"
+              >
+                Try again
+              </Button>
+
+              <Button
+                type="button"
+                data-cuelume-tap
+                variant="outline"
+                onClick={() => {
+                  setStatus("idle");
+                  setError(null);
+                  setResult(null);
+                  setArea(12.9352, 77.6245, "");
+                  setCategoryId("");
+                  window.history.replaceState(null, "", "/");
+                }}
+                className="h-9 px-4 rounded-xl text-xs font-medium cursor-pointer border-border hover:bg-muted text-foreground active:scale-[0.98] transition-transform"
+              >
+                Change search
+              </Button>
+            </div>
           </div>
         )}
 
         {status === "success" && result && (
           <div className="w-full pt-2 sm:pt-3 lg:pt-3.5 pb-4 sm:pb-6" id="gap-result">
+            <div className="sr-only" role="status" aria-live="polite">
+              Market scan completed. Opportunity score is {result.gapSignal.score} out of 100 with a {result.gapSignal.verdict} verdict.
+            </div>
             <div className="grid gap-5 lg:gap-6 xl:gap-7 lg:grid-cols-[1fr_1.2fr] items-stretch w-full lg:h-[clamp(440px,calc(100dvh-6.5rem),520px)]">
               <SignalSummary
                 result={result}

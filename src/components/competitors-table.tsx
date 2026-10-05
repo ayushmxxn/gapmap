@@ -39,9 +39,9 @@ export function CompetitorsTable({
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border/60 bg-muted/25 text-left text-muted-foreground">
-              <th className="px-3.5 py-2.5 font-normal">Place</th>
-              <th className="px-3.5 py-2.5 font-normal">Rating</th>
-              <th className="px-3.5 py-2.5 font-normal">Reviews</th>
+              <th scope="col" className="px-3.5 py-2.5 font-normal">Place</th>
+              <th scope="col" className="px-3.5 py-2.5 font-normal">Rating</th>
+              <th scope="col" className="px-3.5 py-2.5 font-normal">Reviews</th>
             </tr>
           </thead>
           <tbody>
@@ -96,8 +96,9 @@ export function CompetitorsTable({
       {initialLimit && competitors.length > initialLimit && (
         <button
           type="button"
+          aria-expanded={isExpanded}
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-0.5 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors cursor-pointer self-start py-1"
+          className="mt-0.5 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors cursor-pointer self-start py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm"
         >
           <span>
             {isExpanded
@@ -118,7 +119,7 @@ export function CompetitorsTable({
 
       {showSamplingNote && (
         <details className="group rounded-xl border border-border/70 bg-card p-3.5 text-xs shadow-2xs">
-          <summary className="flex cursor-pointer items-center justify-between font-medium text-muted-foreground hover:text-foreground select-none">
+          <summary className="flex cursor-pointer items-center justify-between font-medium text-muted-foreground hover:text-foreground select-none outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm">
             <span>Why these places?</span>
             <HugeiconsIcon
               icon={ArrowDown01Icon}

@@ -152,23 +152,24 @@ export function selectReviewTargets(places: MapsPlace[]): ReviewTarget[] {
 }
 
 export async function POST(req: Request) {
-  // 1. IP Rate Limiting with safe proxy detection
-  const ip = extractClientIp(req);
-  const rateLimit = checkRateLimit(ip);
-  if (rateLimit.limited) {
-    return NextResponse.json(
-      {
-        error: "Scan limit reached. Please try again later.",
-        code: "RATE_LIMITED",
-      },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(rateLimit.resetSeconds),
+  try {
+    // 1. IP Rate Limiting with safe proxy detection
+    const ip = extractClientIp(req);
+    const rateLimit = checkRateLimit(ip);
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        {
+          error: "Scan limit reached. Please try again later.",
+          code: "RATE_LIMITED",
         },
-      },
-    );
-  }
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.resetSeconds),
+          },
+        },
+      );
+    }
 
   // 2. Strict Input Validation
   let rawBody: unknown;
@@ -213,7 +214,15 @@ export async function POST(req: Request) {
       areaLabel,
       scope: scopeType,
     });
-    return NextResponse.json(scanResultSchema.parse(mock));
+    const parsedMock = scanResultSchema.safeParse(mock);
+    if (!parsedMock.success) {
+      logSafeError("Failed to validate mock scan result", parsedMock.error);
+      return NextResponse.json(
+        { error: "Internal error preparing scan data.", code: "INTERNAL_ERROR" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json(parsedMock.data);
   }
 
   // 5. In-flight Deduplication & Cache Check
@@ -640,5 +649,15 @@ export async function POST(req: Request) {
     );
   } finally {
     clearInFlightScan(scanKey);
+  }
+  } catch (err) {
+    logSafeError("Fatal unhandled exception in /api/scan POST", err);
+    return NextResponse.json(
+      {
+        error: "An unexpected error occurred while processing the scan.",
+        code: "INTERNAL_ERROR",
+      },
+      { status: 500 },
+    );
   }
 }

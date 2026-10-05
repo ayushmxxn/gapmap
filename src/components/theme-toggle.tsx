@@ -31,7 +31,7 @@ export function ThemeToggle() {
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={handleToggle}
       className={cn(
-        "group relative inline-flex h-[26px] w-[46px] shrink-0 cursor-pointer items-center rounded-full p-[2px] select-none outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98]",
+        "group relative inline-flex h-[26px] w-[46px] shrink-0 cursor-pointer items-center rounded-full p-[2px] select-none outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] before:absolute before:-inset-2 before:content-['']",
         isDark
           ? "bg-[#1c1e1c] border border-white/[0.08]"
           : "bg-[#E9E9EA] border border-black/[0.06]",
