@@ -557,13 +557,15 @@ export function UnifiedSearch({
         </ShortcutPill>
 
         {/* Centered Business Picker Modal */}
-        <BusinessPickerModal
-          isOpen={isMoreOpen}
-          onClose={() => setIsMoreOpen(false)}
-          onSelectBusiness={handleSelectBusiness}
-          currentBusinessLabel={activeCategory?.label}
-          triggerRef={moreButtonRef}
-        />
+        {isMoreOpen && (
+          <BusinessPickerModal
+            isOpen={isMoreOpen}
+            onClose={() => setIsMoreOpen(false)}
+            onSelectBusiness={handleSelectBusiness}
+            currentBusinessLabel={activeCategory?.label}
+            triggerRef={moreButtonRef}
+          />
+        )}
       </div>
 
       {/* 4. Compact Confirmation State: shown naturally only when feedback/location exists */}

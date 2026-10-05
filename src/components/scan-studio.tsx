@@ -1,6 +1,6 @@
 "use client";
 
-import { EvidenceSheet } from "@/components/evidence-sheet";
+import dynamic from "next/dynamic";
 import { MapWrapper } from "@/components/map-wrapper";
 import { SignalSummary } from "@/components/signal-hero";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -15,11 +15,19 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
+const EvidenceSheet = dynamic(
+  () => import("@/components/evidence-sheet").then((m) => m.EvidenceSheet),
+  { ssr: false },
+);
+
 function useUrlSync() {
   const params = useSearchParams();
   const lastKey = React.useRef<string | null>(null);
-  const { setArea, setCategoryId, setStatus, setResult, setError } =
-    useAppStore();
+  const setArea = useAppStore((s) => s.setArea);
+  const setCategoryId = useAppStore((s) => s.setCategoryId);
+  const setStatus = useAppStore((s) => s.setStatus);
+  const setResult = useAppStore((s) => s.setResult);
+  const setError = useAppStore((s) => s.setError);
 
   React.useEffect(() => {
     const lat = Number(params.get("lat"));
@@ -52,20 +60,18 @@ function useUrlSync() {
 
 export function ScanStudio() {
   useUrlSync();
-  const {
-    status,
-    result,
-    error,
-    lat,
-    lng,
-    areaLabel,
-    categoryId,
-    setArea,
-    setCategoryId,
-    setStatus,
-    setResult,
-    setError,
-  } = useAppStore();
+  const status = useAppStore((s) => s.status);
+  const result = useAppStore((s) => s.result);
+  const error = useAppStore((s) => s.error);
+  const lat = useAppStore((s) => s.lat);
+  const lng = useAppStore((s) => s.lng);
+  const areaLabel = useAppStore((s) => s.areaLabel);
+  const categoryId = useAppStore((s) => s.categoryId);
+  const setArea = useAppStore((s) => s.setArea);
+  const setCategoryId = useAppStore((s) => s.setCategoryId);
+  const setStatus = useAppStore((s) => s.setStatus);
+  const setResult = useAppStore((s) => s.setResult);
+  const setError = useAppStore((s) => s.setError);
 
   const [sheetOpen, setSheetOpen] = React.useState(false);
 

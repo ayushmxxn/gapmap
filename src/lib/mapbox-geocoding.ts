@@ -12,14 +12,21 @@ export interface GeocodingResult {
   scope?: "city" | "neighborhood";
 }
 
+const MAX_GEOCODE_CACHE = 100;
+const searchPlacesCache = new Map<string, GeocodingResult[]>();
+const reverseGeocodeCache = new Map<string, string>();
+
 export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
-  const clean = query.trim();
+  const clean = query.trim().toLowerCase();
   if (!clean) return [];
+
+  const cached = searchPlacesCache.get(clean);
+  if (cached) return cached;
 
   const fallbackResults = () =>
     KNOWN_PLACES.filter((p) =>
-      p.label.toLowerCase().includes(clean.toLowerCase()) ||
-      clean.toLowerCase().includes(p.label.split(",")[0].toLowerCase()),
+      p.label.toLowerCase().includes(clean) ||
+      clean.includes(p.label.split(",")[0].toLowerCase()),
     ).map((p) => ({
       id: p.id,
       name: p.label.split(",")[0],
@@ -30,7 +37,12 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
     }));
 
   if (isMockMode() || !isMapboxConfigured()) {
-    return fallbackResults();
+    const results = fallbackResults();
+    if (searchPlacesCache.size >= MAX_GEOCODE_CACHE) {
+      searchPlacesCache.delete(searchPlacesCache.keys().next().value!);
+    }
+    searchPlacesCache.set(clean, results);
+    return results;
   }
 
   try {
@@ -43,7 +55,7 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
     const data = await res.json();
     if (!data.features || !Array.isArray(data.features)) return [];
 
-    return data.features.map(
+    const mapped = data.features.map(
       (f: {
         id: string;
         text: string;
@@ -66,6 +78,12 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
         };
       },
     );
+
+    if (searchPlacesCache.size >= MAX_GEOCODE_CACHE) {
+      searchPlacesCache.delete(searchPlacesCache.keys().next().value!);
+    }
+    searchPlacesCache.set(clean, mapped);
+    return mapped;
   } catch {
     return fallbackResults();
   }
@@ -75,13 +93,20 @@ export async function reverseGeocode(
   lat: number,
   lng: number,
 ): Promise<string> {
+  const cacheKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+  const cached = reverseGeocodeCache.get(cacheKey);
+  if (cached) return cached;
+
   // If close to a preset, use the preset name
   const closePreset = AREA_PRESETS.find((p) => {
     const dLat = Math.abs(p.lat - lat);
     const dLng = Math.abs(p.lng - lng);
     return dLat < 0.05 && dLng < 0.05;
   });
-  if (closePreset) return closePreset.label;
+  if (closePreset) {
+    reverseGeocodeCache.set(cacheKey, closePreset.label);
+    return closePreset.label;
+  }
 
   if (isMockMode() || !isMapboxConfigured()) {
     return "Selected location";
@@ -94,8 +119,15 @@ export async function reverseGeocode(
     if (!res.ok) throw new Error("Reverse geocoding failed");
     const data = await res.json();
     const feature = data.features?.[0];
-    if (!feature) return "Selected location";
-    return feature.place_name || feature.text || "Selected location";
+    const resolvedLabel = feature
+      ? feature.place_name || feature.text || "Selected location"
+      : "Selected location";
+
+    if (reverseGeocodeCache.size >= MAX_GEOCODE_CACHE) {
+      reverseGeocodeCache.delete(reverseGeocodeCache.keys().next().value!);
+    }
+    reverseGeocodeCache.set(cacheKey, resolvedLabel);
+    return resolvedLabel;
   } catch {
     return "Selected location";
   }

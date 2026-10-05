@@ -6,7 +6,6 @@ import Map, { Marker, Popup, Source, Layer, type MapRef } from "react-map-gl/map
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GlobalIcon } from "@hugeicons/core-free-icons";
 import { circle } from "@turf/turf";
-import "mapbox-gl/dist/mapbox-gl.css";
 import {
   getMapboxToken,
   isMapboxConfigured,
@@ -60,6 +59,44 @@ function pinColor(rating: number | undefined): string {
 function competitorKey(c: Competitor): string {
   return `${c.title}-${c.lat}-${c.lng}`;
 }
+
+const CompetitorMarker = React.memo(function CompetitorMarker({
+  competitor,
+  isSelected,
+  onSelect,
+}: {
+  competitor: Competitor;
+  isSelected: boolean;
+  onSelect: (c: Competitor) => void;
+}) {
+  const handleClick = React.useCallback(
+    (e: { originalEvent: MouseEvent }) => {
+      e.originalEvent.stopPropagation();
+      onSelect(competitor);
+    },
+    [competitor, onSelect],
+  );
+
+  return (
+    <Marker
+      longitude={competitor.lng!}
+      latitude={competitor.lat!}
+      anchor="bottom"
+      onClick={handleClick}
+    >
+      <span
+        className={cn(
+          "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform",
+          isSelected && "scale-125 ring-2 ring-white dark:ring-black",
+        )}
+        style={{ backgroundColor: pinColor(competitor.rating) }}
+        title={competitor.title}
+      >
+        {competitor.rating != null ? competitor.rating.toFixed(1) : "–"}
+      </span>
+    </Marker>
+  );
+});
 
 interface GlobeCapableMap {
   setProjection?: (name: string) => void;
@@ -117,6 +154,9 @@ export function DiscoveryMap({
   }, [projection]);
 
   const [selected, setSelected] = React.useState<Competitor | null>(null);
+  const handleSelectCompetitor = React.useCallback((c: Competitor) => {
+    setSelected(c);
+  }, []);
 
   // Measurement states for reliable mounting
   const [dimensions, setDimensions] = React.useState<{ width: number; height: number } | null>(null);
@@ -217,10 +257,11 @@ export function DiscoveryMap({
     const el = containerRef.current;
     if (!el) return;
 
+    let rafId: number | null = null;
     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     let secondTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const updateMapDimensions = () => {
+    const performMeasurement = () => {
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const w = Math.round(rect.width);
@@ -247,7 +288,12 @@ export function DiscoveryMap({
       }
     };
 
-    updateMapDimensions();
+    const updateMapDimensions = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(performMeasurement);
+    };
+
+    performMeasurement();
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -267,27 +313,25 @@ export function DiscoveryMap({
       secondTimer = setTimeout(updateMapDimensions, 350);
     };
 
-    window.addEventListener("resize", updateMapDimensions);
     window.addEventListener("orientationchange", onOrientationChange);
-    const vv = typeof window !== "undefined" ? window.visualViewport : null;
-    if (vv) {
-      vv.addEventListener("resize", updateMapDimensions);
-    }
 
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       observer.disconnect();
       if (resizeTimer) clearTimeout(resizeTimer);
       if (secondTimer) clearTimeout(secondTimer);
-      window.removeEventListener("resize", updateMapDimensions);
       window.removeEventListener("orientationchange", onOrientationChange);
-      if (vv) {
-        vv.removeEventListener("resize", updateMapDimensions);
-      }
+      if (projectionTimerRef.current) clearTimeout(projectionTimerRef.current);
     };
   }, [isLocal]);
 
   /* Position map camera for local/city scan or fly globe when area is chosen. */
+  const lastCameraTargetRef = React.useRef<string | null>(null);
   React.useEffect(() => {
+    const targetKey = `${isLocal ? "local" : "globe"}-${scope}-${lat.toFixed(4)}-${lng.toFixed(4)}-${competitors.length}`;
+    if (lastCameraTargetRef.current === targetKey) return;
+    lastCameraTargetRef.current = targetKey;
+
     if (isLocal) {
       const map = mapRef.current?.getMap() as unknown as
         | {
@@ -543,29 +587,14 @@ export function DiscoveryMap({
             (c) =>
               c.lat != null &&
               c.lng != null && (
-                <Marker
+                <CompetitorMarker
                   key={competitorKey(c)}
-                  longitude={c.lng}
-                  latitude={c.lat}
-                  anchor="bottom"
-                  onClick={(e) => {
-                    e.originalEvent.stopPropagation();
-                    setSelected(c);
-                  }}
-                >
-                  <span
-                    className={cn(
-                      "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform",
-                      selected &&
-                        competitorKey(selected) === competitorKey(c) &&
-                        "scale-125 ring-2 ring-white dark:ring-black",
-                    )}
-                    style={{ backgroundColor: pinColor(c.rating) }}
-                    title={c.title}
-                  >
-                    {c.rating != null ? c.rating.toFixed(1) : "–"}
-                  </span>
-                </Marker>
+                  competitor={c}
+                  isSelected={Boolean(
+                    selected && competitorKey(selected) === competitorKey(c),
+                  )}
+                  onSelect={handleSelectCompetitor}
+                />
               ),
           )}
 

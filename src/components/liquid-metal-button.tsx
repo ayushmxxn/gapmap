@@ -16,7 +16,7 @@ interface LiquidMetalButtonProps {
   showArrow?: boolean;
 }
 
-export function LiquidMetalButton({
+export const LiquidMetalButton = React.memo(function LiquidMetalButton({
   label = "Find opportunities",
   onClick,
   type = "submit",
@@ -376,4 +376,4 @@ export function LiquidMetalButton({
       </div>
     </div>
   );
-}
+});

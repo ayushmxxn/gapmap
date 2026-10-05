@@ -239,11 +239,22 @@ export async function POST(req: Request) {
     }
   }
 
-  // 6. Live Execution with In-Flight Tracking
+    // 6. Live Execution with In-Flight Tracking
   const executionPromise = (async (): Promise<ScanResult> => {
     const ledger: LedgerEntry[] = [];
     let geoPlaces: (MapsPlace & { lat: number; lng: number })[] = [];
     let effectiveRadiusKm = SCAN_RADIUS_KM;
+
+    // Start Google Trends fetch in parallel with Maps and Reviews queries
+    const trendQueries = [category.trendsQuery, ...category.siblings].slice(0, 5);
+    const trendsPromise = fetchTrends({
+      q: trendQueries.join(","),
+      geo: TREND_GEO,
+      date: TREND_DATE,
+    }).catch((err) => {
+      logSafeError("Trends fetch failed; proceeding with renormalized weights", err);
+      return null;
+    });
 
     if (isCity) {
       const cityQuery = `${category.mapsQuery} in ${cityName}`;
@@ -362,25 +373,20 @@ export async function POST(req: Request) {
       )
     ).filter((r): r is NonNullable<typeof r> => r !== null);
 
-    // Isolated Trends fetching: failure renormalizes weights rather than crashing
-    const trendQueries = [category.trendsQuery, ...category.siblings].slice(0, 5);
-    let timeline: TrendsTimelinePoint[] = [];
+    // Await parallelized Trends fetch
+    const trendsTimeline = await trendsPromise;
     const trendsId = `trends-${reviewsByTarget.length + 1}`;
+    let timeline: TrendsTimelinePoint[] = [];
 
-    try {
-      timeline = await fetchTrends({
-        q: trendQueries.join(","),
-        geo: TREND_GEO,
-        date: TREND_DATE,
-      });
+    if (trendsTimeline && trendsTimeline.length > 0) {
+      timeline = trendsTimeline;
       ledger.push({
         id: trendsId,
         engine: "google_trends",
         summary: `q=${trendQueries.join(",")} geo=${TREND_GEO} ${TREND_DATE}`,
         resultCount: timeline.length,
       });
-    } catch (err) {
-      logSafeError("Trends fetch failed; proceeding with renormalized weights", err);
+    } else {
       ledger.push({
         id: trendsId,
         engine: "google_trends",
