@@ -4,8 +4,10 @@ import {
   fetchMapsPlaces,
   fetchPlaceReviews,
   fetchTrends,
+  logSafeError,
   SerpApiError,
   type MapsPlace,
+  type TrendsTimelinePoint,
 } from "@/lib/serpapi";
 import { resolveCategory } from "@/lib/categories";
 import {
@@ -34,6 +36,15 @@ import {
 import { generateMockScanResult } from "@/lib/mock";
 import { resolveLocationScope } from "@/lib/location-scope";
 import { serverEnv } from "@/lib/env";
+import { checkRateLimit, extractClientIp } from "@/lib/rate-limit";
+import {
+  clearInFlightScan,
+  getCachedScan,
+  getInFlightScan,
+  getScanCacheKey,
+  setCachedScan,
+  setInFlightScan,
+} from "@/lib/scan-cache";
 
 const MAX_REVIEW_TARGETS = 5;
 const MIN_REVIEWS_FOR_WEAK_PICK = 10;
@@ -58,27 +69,36 @@ const COMPLAINT_HINTS = [
 ];
 
 const inputSchema = z.object({
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
-  categoryId: z.string().min(1).max(40),
-  areaLabel: z.string().min(1).max(120),
+  lat: z
+    .number()
+    .finite("Latitude must be a valid number")
+    .min(-90, "Latitude must be between -90 and 90")
+    .max(90, "Latitude must be between -90 and 90"),
+  lng: z
+    .number()
+    .finite("Longitude must be a valid number")
+    .min(-180, "Longitude must be between -180 and 180")
+    .max(180, "Longitude must be between -180 and 180"),
+  categoryId: z
+    .string()
+    .trim()
+    .min(1, "Category cannot be empty")
+    .max(50, "Category exceeds maximum length")
+    .regex(/^[a-zA-Z0-9\s\-_'&.]+$/, "Category contains invalid characters"),
+  areaLabel: z
+    .string()
+    .trim()
+    .min(1, "Location label cannot be empty")
+    .max(150, "Location label exceeds maximum length"),
   scope: z.enum(["city", "neighborhood"]).optional(),
 });
 
-const hitsByIp = new Map<string, number[]>();
-function rateLimited(ip: string): boolean {
-  if (process.env.NODE_ENV !== "production") return false;
-  const now = Date.now();
-  const windowStart = now - 60 * 60 * 1000;
-  const hits = (hitsByIp.get(ip) ?? []).filter((t) => t > windowStart);
-  if (hits.length >= 10) return true;
-  hits.push(now);
-  hitsByIp.set(ip, hits);
-  return false;
-}
-
 function placeKey(p: MapsPlace): string {
-  return p.data_id ?? p.place_id ?? `${p.title}-${p.gps_coordinates?.latitude ?? ""}-${p.gps_coordinates?.longitude ?? ""}`;
+  return (
+    p.data_id ??
+    p.place_id ??
+    `${p.title}-${p.gps_coordinates?.latitude ?? ""}-${p.gps_coordinates?.longitude ?? ""}`
+  );
 }
 
 interface ReviewTarget {
@@ -87,7 +107,7 @@ interface ReviewTarget {
 }
 
 export function selectReviewTargets(places: MapsPlace[]): ReviewTarget[] {
-  const withIds = places.filter((p) => p.data_id);
+  const withIds = places.filter((p) => Boolean(p.data_id));
   const picked = new Map<string, ReviewTarget>();
   const take = (p: MapsPlace, role: ReviewTarget["role"]) => {
     if (picked.size >= MAX_REVIEW_TARGETS) return;
@@ -104,10 +124,16 @@ export function selectReviewTargets(places: MapsPlace[]): ReviewTarget[] {
   }
 
   const weak = withIds
-    .filter((p) => p.rating != null && (p.reviews ?? 0) >= MIN_REVIEWS_FOR_WEAK_PICK)
+    .filter(
+      (p) =>
+        p.rating != null && (p.reviews ?? 0) >= MIN_REVIEWS_FOR_WEAK_PICK,
+    )
     .sort((a, b) => (a.rating ?? 5) - (b.rating ?? 5));
   for (const p of weak) {
-    if ([...picked.values()].filter((t) => t.role === "weak-incumbent").length >= 2) break;
+    if (
+      [...picked.values()].filter((t) => t.role === "weak-incumbent").length >= 2
+    )
+      break;
     take(p, "weak-incumbent");
   }
 
@@ -126,31 +152,59 @@ export function selectReviewTargets(places: MapsPlace[]): ReviewTarget[] {
 }
 
 export async function POST(req: Request) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (rateLimited(ip)) {
+  // 1. IP Rate Limiting with safe proxy detection
+  const ip = extractClientIp(req);
+  const rateLimit = checkRateLimit(ip);
+  if (rateLimit.limited) {
     return NextResponse.json(
-      { error: "Scan limit reached. Try again later." },
-      { status: 429 },
+      {
+        error: "Scan limit reached. Please try again later.",
+        code: "RATE_LIMITED",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.resetSeconds),
+        },
+      },
     );
   }
 
-  const parsedInput = inputSchema.safeParse(await req.json().catch(() => null));
-  if (!parsedInput.success) {
-    return NextResponse.json({ error: "Invalid scan input." }, { status: 400 });
+  // 2. Strict Input Validation
+  let rawBody: unknown;
+  try {
+    rawBody = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON request body.", code: "INVALID_JSON" },
+      { status: 400 },
+    );
   }
+
+  const parsedInput = inputSchema.safeParse(rawBody);
+  if (!parsedInput.success) {
+    const firstIssue = parsedInput.error.issues[0];
+    const message = firstIssue
+      ? `${firstIssue.path.join(".") || "input"}: ${firstIssue.message}`
+      : "Invalid scan parameters.";
+    return NextResponse.json(
+      { error: message, code: "VALIDATION_ERROR" },
+      { status: 400 },
+    );
+  }
+
   const { lat, lng, categoryId, areaLabel } = parsedInput.data;
   const category = resolveCategory(categoryId);
 
-  // Resolve scope: City-wide scan vs Neighborhood/local scan
+  // 3. Resolve Scope (City-wide vs Neighborhood)
   const resolvedScope = resolveLocationScope(areaLabel);
   const scopeType = parsedInput.data.scope ?? resolvedScope.scope;
   const isCity = scopeType === "city";
   const cityName = resolvedScope.cityName;
 
-  const hasKey = serverEnv.SERPAPI_KEY.length > 0;
+  // 4. Mock Mode (Zero-cost, fully offline/safe)
+  const hasKey = (serverEnv.SERPAPI_KEY ?? "").trim().length > 0;
   if (!hasKey || serverEnv.NEXT_PUBLIC_USE_MOCK) {
-    // Mock mode: generate full realistic dataset matching the scope
     const mock = generateMockScanResult({
       lat,
       lng,
@@ -162,22 +216,45 @@ export async function POST(req: Request) {
     return NextResponse.json(scanResultSchema.parse(mock));
   }
 
-  try {
+  // 5. In-flight Deduplication & Cache Check
+  const scanKey = getScanCacheKey({
+    lat,
+    lng,
+    categoryId: category.id,
+    scope: scopeType,
+  });
+
+  const cachedResult = getCachedScan(scanKey);
+  if (cachedResult) {
+    return NextResponse.json(cachedResult);
+  }
+
+  const inFlight = getInFlightScan(scanKey);
+  if (inFlight) {
+    try {
+      const result = await inFlight;
+      return NextResponse.json(result);
+    } catch {
+      // If the running in-flight scan threw an error, fall through to attempt a fresh execution
+    }
+  }
+
+  // 6. Live Execution with In-Flight Tracking
+  const executionPromise = (async (): Promise<ScanResult> => {
     const ledger: LedgerEntry[] = [];
     let geoPlaces: (MapsPlace & { lat: number; lng: number })[] = [];
     let effectiveRadiusKm = SCAN_RADIUS_KM;
 
     if (isCity) {
-      // City-wide scan: Query across the city with pagination to collect sufficient results
       const cityQuery = `${category.mapsQuery} in ${cityName}`;
       const ll = `@${lat},${lng},${CITY_SCAN_ZOOM}z`;
 
-      // Page 1
       const page1Places = await fetchMapsPlaces({
         q: cityQuery,
         ll,
         start: 0,
       });
+
       ledger.push({
         id: "maps-1",
         engine: "google_maps",
@@ -185,9 +262,9 @@ export async function POST(req: Request) {
         resultCount: page1Places.length,
       });
 
-      // Page 2 (if page 1 had full results, fetch page 2 to cover more commercial clusters)
+      // Fetch Page 2 only if page 1 returned a full batch (20 items)
       let page2Places: MapsPlace[] = [];
-      if (page1Places.length >= 10) {
+      if (page1Places.length >= 20) {
         try {
           page2Places = await fetchMapsPlaces({
             q: cityQuery,
@@ -202,12 +279,11 @@ export async function POST(req: Request) {
               resultCount: page2Places.length,
             });
           }
-        } catch {
-          /* Page 2 optional; continue with page 1 */
+        } catch (err) {
+          logSafeError("City page 2 fetch omitted", err);
         }
       }
 
-      // Deduplicate across pages
       const seenKeys = new Set<string>();
       const combinedPlaces: MapsPlace[] = [];
       for (const p of [...page1Places, ...page2Places]) {
@@ -218,10 +294,9 @@ export async function POST(req: Request) {
         }
       }
 
-      // Filter to places within city bounds (do NOT use 1.5km center restriction)
       geoPlaces = filterWithinCity(
         combinedPlaces
-          .filter((p) => p.gps_coordinates)
+          .filter((p) => Boolean(p.gps_coordinates))
           .map((p) => ({
             ...p,
             lat: p.gps_coordinates?.latitude ?? Number.NaN,
@@ -234,7 +309,6 @@ export async function POST(req: Request) {
 
       effectiveRadiusKm = effectiveSpreadRadiusKm(geoPlaces, { lat, lng });
     } else {
-      // Neighborhood scan: focused 1.5 km radius around center
       const neighborhoodQuery = `${category.mapsQuery} in ${areaLabel}`;
       const ll = `@${lat},${lng},${NEIGHBORHOOD_SCAN_ZOOM}z`;
 
@@ -243,6 +317,7 @@ export async function POST(req: Request) {
         ll,
         start: 0,
       });
+
       ledger.push({
         id: "maps-1",
         engine: "google_maps",
@@ -252,7 +327,7 @@ export async function POST(req: Request) {
 
       geoPlaces = filterWithinRadius(
         mapsPlaces
-          .filter((p) => p.gps_coordinates)
+          .filter((p) => Boolean(p.gps_coordinates))
           .map((p) => ({
             ...p,
             lat: p.gps_coordinates?.latitude ?? Number.NaN,
@@ -264,34 +339,55 @@ export async function POST(req: Request) {
       effectiveRadiusKm = SCAN_RADIUS_KM;
     }
 
+    // Isolated review target fetching: individual failure does not abort scan
     const targets = selectReviewTargets(geoPlaces);
-    const reviewsByTarget = await Promise.all(
-      targets.map(async (t, i) => {
-        const id = `reviews-${i + 1}`;
-        const data = await fetchPlaceReviews(t.place.data_id as string);
-        ledger.push({
-          id,
-          engine: "google_maps_reviews",
-          summary: `${t.place.title} (${t.role})`,
-          resultCount: data.reviews.length,
-        });
-        return { target: t, ledgerId: id, data };
-      }),
-    );
+    const reviewsByTarget = (
+      await Promise.all(
+        targets.map(async (t, i) => {
+          const id = `reviews-${i + 1}`;
+          try {
+            const data = await fetchPlaceReviews(t.place.data_id as string);
+            ledger.push({
+              id,
+              engine: "google_maps_reviews",
+              summary: `${t.place.title} (${t.role})`,
+              resultCount: data.reviews.length,
+            });
+            return { target: t, ledgerId: id, data };
+          } catch (err) {
+            logSafeError(`Failed to fetch reviews for ${t.place.title}`, err);
+            return null;
+          }
+        }),
+      )
+    ).filter((r): r is NonNullable<typeof r> => r !== null);
 
+    // Isolated Trends fetching: failure renormalizes weights rather than crashing
     const trendQueries = [category.trendsQuery, ...category.siblings].slice(0, 5);
-    const timeline = await fetchTrends({
-      q: trendQueries.join(","),
-      geo: TREND_GEO,
-      date: TREND_DATE,
-    });
+    let timeline: TrendsTimelinePoint[] = [];
     const trendsId = `trends-${reviewsByTarget.length + 1}`;
-    ledger.push({
-      id: trendsId,
-      engine: "google_trends",
-      summary: `q=${trendQueries.join(",")} geo=${TREND_GEO} ${TREND_DATE}`,
-      resultCount: timeline.length,
-    });
+
+    try {
+      timeline = await fetchTrends({
+        q: trendQueries.join(","),
+        geo: TREND_GEO,
+        date: TREND_DATE,
+      });
+      ledger.push({
+        id: trendsId,
+        engine: "google_trends",
+        summary: `q=${trendQueries.join(",")} geo=${TREND_GEO} ${TREND_DATE}`,
+        resultCount: timeline.length,
+      });
+    } catch (err) {
+      logSafeError("Trends fetch failed; proceeding with renormalized weights", err);
+      ledger.push({
+        id: trendsId,
+        engine: "google_trends",
+        summary: `q=${trendQueries.join(",")} (unavailable, weights renormalized)`,
+        resultCount: 0,
+      });
+    }
 
     /* ---- Competitors ---- */
     const targetRole = new Map(
@@ -334,15 +430,15 @@ export async function POST(req: Request) {
       if (themes.length === 0) themesWithheld = true;
     }
 
-    /* ---- Components ---- */
+    /* ---- Scoring Components ---- */
     const targetName = trendQueries[0].toLowerCase();
     const targetValues = timeline
       .map((pt) => pt.values.find((v) => v.query.toLowerCase() === targetName))
-      .filter((v) => v !== undefined)
+      .filter((v): v is NonNullable<typeof v> => v !== undefined)
       .map((v) => v.extracted_value);
+
     const trendSignal = computeTrendSignal(targetValues);
-    const trendScopeLabel =
-      "Google Trends · India, national · past 12 months";
+    const trendScopeLabel = "Google Trends · India, national · past 12 months";
 
     const totalReviews = geoPlaces.reduce((a, p) => a + (p.reviews ?? 0), 0);
     const reviewSupport = computeReviewSupport(totalReviews);
@@ -357,12 +453,14 @@ export async function POST(req: Request) {
     const rated = geoPlaces
       .filter((p) => p.rating != null)
       .map((p) => ({ rating: p.rating as number, reviews: p.reviews ?? 0 }));
+
     const allMentions = themes.reduce((a, t) => a + t.mentions, 0);
     const complaintMentions = themes
       .filter((t) =>
         COMPLAINT_HINTS.some((h) => t.keyword.toLowerCase().includes(h)),
       )
       .reduce((a, t) => a + t.mentions, 0);
+
     const qualityGap = computeQualityGap(rated, complaintMentions, allMentions);
 
     const gap = computeGapSignal({
@@ -372,7 +470,7 @@ export async function POST(req: Request) {
       qualityGap,
     });
 
-    /* ---- Insights (every claim carries ledger refs) ---- */
+    /* ---- Insights ---- */
     const insights: Insight[] = [];
     if (trendSignal) {
       const dir =
@@ -392,48 +490,62 @@ export async function POST(req: Request) {
       });
     }
 
-    const weakPlaces = rated.filter((p) => p.rating < 4);
-    const weakReviews = weakPlaces.reduce((a, p) => a + p.reviews, 0);
-    if (weakPlaces.length > 0) {
-      const weakIds = reviewsByTarget
-        .filter((r) => r.target.role === "weak-incumbent")
-        .map((r) => r.ledgerId);
+    if (geoPlaces.length === 0) {
       insights.push({
-        text: `${weakPlaces.length} of ${rated.length} rated places score below 4.0, holding ${weakReviews.toLocaleString("en-IN")} reviews — footfall exists, satisfaction lags.`,
-        evidence: ["maps-1", ...weakIds],
-      });
-    } else if (rated.length > 0) {
-      insights.push({
-        text: "Every rated place holds 4.0 or more — incumbents look strong on quality.",
-        evidence: ["maps-1"],
-      });
-    }
-
-    if (!themesWithheld && themes.length > 0) {
-      const top = themes.slice(0, 2);
-      insights.push({
-        text: `Recurring review themes: ${top.map((t) => `${t.keyword} (${t.mentions}, ${t.sourcePlace})`).join("; ")}.`,
-        evidence: [...new Set(top.map((t) => t.evidence))],
-      });
-    }
-
-    if (isCity) {
-      insights.push({
-        text: `${geoPlaces.length} places identified across ${cityName} city-wide.`,
+        text: `No active ${category.label.toLowerCase()} businesses found within this ${isCity ? "city" : "neighborhood"} — indicates an open market or early-stage commercial area.`,
         evidence: ["maps-1"],
       });
     } else {
-      insights.push({
-        text: `${geoPlaces.length} places within ${SCAN_RADIUS_KM} km (${densityPerKm2(geoPlaces.length, SCAN_RADIUS_KM).toFixed(1)}/km²).`,
-        evidence: ["maps-1"],
-      });
+      const weakPlaces = rated.filter((p) => p.rating < 4);
+      const weakReviews = weakPlaces.reduce((a, p) => a + p.reviews, 0);
+      if (weakPlaces.length > 0) {
+        const weakIds = reviewsByTarget
+          .filter((r) => r.target.role === "weak-incumbent")
+          .map((r) => r.ledgerId);
+        insights.push({
+          text: `${weakPlaces.length} of ${rated.length} rated places score below 4.0, holding ${weakReviews.toLocaleString("en-IN")} reviews — footfall exists, satisfaction lags.`,
+          evidence: ["maps-1", ...weakIds],
+        });
+      } else if (rated.length > 0) {
+        insights.push({
+          text: "Every rated place holds 4.0 or more — incumbents look strong on quality.",
+          evidence: ["maps-1"],
+        });
+      }
+
+      if (totalReviews < 10) {
+        insights.push({
+          text: "Low total review volume recorded — market signal relies primarily on geographic supply spread.",
+          evidence: ["maps-1"],
+        });
+      }
+
+      if (!themesWithheld && themes.length > 0) {
+        const top = themes.slice(0, 2);
+        insights.push({
+          text: `Recurring review themes: ${top.map((t) => `${t.keyword} (${t.mentions}, ${t.sourcePlace})`).join("; ")}.`,
+          evidence: [...new Set(top.map((t) => t.evidence))],
+        });
+      }
+
+      if (isCity) {
+        insights.push({
+          text: `${geoPlaces.length} places identified across ${cityName} city-wide.`,
+          evidence: ["maps-1"],
+        });
+      } else {
+        insights.push({
+          text: `${geoPlaces.length} places within ${SCAN_RADIUS_KM} km (${densityPerKm2(geoPlaces.length, SCAN_RADIUS_KM).toFixed(1)}/km²).`,
+          evidence: ["maps-1"],
+        });
+      }
     }
 
     const scopeLabel = isCity
       ? `City-wide scan · ${cityName}`
       : `Neighborhood scan · 1.5 km`;
 
-    const result: ScanResult = {
+    const scanResult: ScanResult = {
       mode: "live",
       version: "v0",
       area: { label: areaLabel, lat, lng, scope: scopeType },
@@ -476,7 +588,7 @@ export async function POST(req: Request) {
                 );
                 return v ? { date: pt.date, value: v.extracted_value } : null;
               })
-              .filter((x) => x !== null),
+              .filter((x): x is NonNullable<typeof x> => x !== null),
             evidence: trendsId,
           }
         : null,
@@ -484,11 +596,43 @@ export async function POST(req: Request) {
       ledger,
     };
 
-    return NextResponse.json(scanResultSchema.parse(result));
+    const validated = scanResultSchema.parse(scanResult);
+    setCachedScan(scanKey, validated);
+    return validated;
+  })();
+
+  setInFlightScan(scanKey, executionPromise);
+
+  try {
+    const result = await executionPromise;
+    return NextResponse.json(result);
   } catch (err) {
     if (err instanceof SerpApiError) {
-      return NextResponse.json({ error: err.message }, { status: 502 });
+      logSafeError("Upstream SerpApi failure during scan", err);
+      return NextResponse.json(
+        { error: err.userMessage, code: err.code },
+        { status: err.statusCode },
+      );
     }
-    return NextResponse.json({ error: "Scan failed." }, { status: 500 });
+    if (err instanceof z.ZodError) {
+      logSafeError("Scan result schema validation failed", err);
+      return NextResponse.json(
+        {
+          error: "Internal error processing scan results.",
+          code: "SCHEMA_VALIDATION_ERROR",
+        },
+        { status: 500 },
+      );
+    }
+    logSafeError("Unhandled exception in /api/scan", err);
+    return NextResponse.json(
+      {
+        error: "An unexpected error occurred while processing the scan.",
+        code: "INTERNAL_ERROR",
+      },
+      { status: 500 },
+    );
+  } finally {
+    clearInFlightScan(scanKey);
   }
 }

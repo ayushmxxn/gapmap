@@ -5,31 +5,128 @@ import { serverEnv } from "@/lib/env";
 /**
  * Server-side SerpApi client. Never import from client components.
  *
- * Schemas frozen from official docs (google-maps, google-maps-reviews,
- * google-trends). Unknown keys are stripped by Zod; every consumed field is
- * optional except proven-required ones, so payload drift fails soft, not loud.
- *
- * Pagination note (verified 2026-09-25 against current docs + no live key):
- * `start` carries no documented `ll` incompatibility, but it cannot be
- * verified live, so the MVP issues ONE Maps request (start=0). See
- * MAX_MAPS_PAGES in the scan route.
+ * Hardened with:
+ * - Strict schema validation with safe fallbacks.
+ * - Non-leaking error sanitization (API keys never appear in errors or logs).
+ * - Per-request socket and promise timeouts.
+ * - Explicit handling of empty result states (SerpApi "hasn't returned any results").
+ * - Specialized error classifications (timeout, rate-limit, auth, network).
  */
 
+const DEFAULT_TIMEOUT_MS = 12000; // 12 seconds per external request
+
 export class SerpApiError extends Error {
-  constructor(message: string) {
-    super(message);
+  public readonly statusCode: number;
+  public readonly code: string;
+  public readonly userMessage: string;
+
+  constructor(
+    userMessage: string,
+    options?: {
+      statusCode?: number;
+      code?: string;
+      cause?: unknown;
+    },
+  ) {
+    super(userMessage);
     this.name = "SerpApiError";
+    this.userMessage = userMessage;
+    this.statusCode = options?.statusCode ?? 502;
+    this.code = options?.code ?? "UPSTREAM_ERROR";
+    if (options?.cause) {
+      this.cause = options.cause;
+    }
+  }
+}
+
+export class SerpApiTimeoutError extends SerpApiError {
+  public readonly operation?: string;
+
+  constructor(operation?: string) {
+    super("External data provider timed out. Please try again.", {
+      statusCode: 504,
+      code: "UPSTREAM_TIMEOUT",
+    });
+    this.name = "SerpApiTimeoutError";
+    this.operation = operation;
+  }
+}
+
+export class SerpApiRateLimitError extends SerpApiError {
+  constructor() {
+    super("External search provider rate limit reached. Please wait a moment.", {
+      statusCode: 429,
+      code: "UPSTREAM_RATE_LIMITED",
+    });
+    this.name = "SerpApiRateLimitError";
+  }
+}
+
+export class SerpApiAuthError extends SerpApiError {
+  constructor() {
+    super("Data provider configuration error.", {
+      statusCode: 500,
+      code: "PROVIDER_AUTH_ERROR",
+    });
+    this.name = "SerpApiAuthError";
+  }
+}
+
+/**
+ * Strips raw API keys and query-param secrets from text before any logging.
+ */
+export function sanitizeSecrets(text: string): string {
+  const key = serverEnv.SERPAPI_KEY;
+  let sanitized = text;
+  if (key && key.length > 4) {
+    sanitized = sanitized.replaceAll(key, "[REDACTED_API_KEY]");
+  }
+  return sanitized.replace(/api_key=([^&"'\s]+)/gi, "api_key=[REDACTED]");
+}
+
+export function logSafeError(context: string, err: unknown): void {
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  console.error(
+    `[SerpApi ERROR] ${context}: ${sanitizeSecrets(message)}`,
+    stack ? `\n${sanitizeSecrets(stack)}` : "",
+  );
+}
+
+function requireKey(): string {
+  const key = serverEnv.SERPAPI_KEY;
+  if (!key || key.trim().length === 0) {
+    throw new SerpApiAuthError();
+  }
+  return key.trim();
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  operation: string,
+): Promise<T> {
+  let timer: NodeJS.Timeout | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new SerpApiTimeoutError(operation));
+    }, ms);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
 const gpsSchema = z.object({
-  latitude: z.number(),
-  longitude: z.number(),
+  latitude: z.number().finite(),
+  longitude: z.number().finite(),
 });
 
 export const mapsPlaceSchema = z.object({
   position: z.number().optional(),
-  title: z.string(),
+  title: z.string().default("Unknown Place"),
   place_id: z.string().optional(),
   data_id: z.string().optional(),
   data_cid: z.string().optional(),
@@ -58,7 +155,7 @@ const mapsResponseSchema = z.object({
 
 const reviewTopicSchema = z.object({
   keyword: z.string(),
-  mentions: z.number(),
+  mentions: z.number().nonnegative(),
   id: z.string().optional(),
 });
 
@@ -94,12 +191,12 @@ export type PlaceReviews = z.infer<typeof reviewsResponseSchema>;
 
 const trendPointSchema = z.object({
   date: z.string(),
-  timestamp: z.string(),
+  timestamp: z.string().optional().default(""),
   values: z.array(
     z.object({
       query: z.string(),
-      value: z.string(),
-      extracted_value: z.number(),
+      value: z.string().optional().default("0"),
+      extracted_value: z.number().default(0),
     }),
   ),
 });
@@ -113,32 +210,85 @@ const trendsResponseSchema = z.object({
 
 export type TrendsTimelinePoint = z.infer<typeof trendPointSchema>;
 
-function requireKey(): string {
-  const key = serverEnv.SERPAPI_KEY;
-  if (!key) {
-    throw new SerpApiError("Missing SERPAPI_KEY. Set it in .env.local.");
-  }
-  return key;
+function isRateLimitMessage(msg: string): boolean {
+  return /rate\s*limit|too\s*many\s*requests|out\s*of\s*searches|credit.*exhausted|monthly.*limit|429/i.test(
+    msg,
+  );
+}
+
+function isAuthErrorMessage(msg: string): boolean {
+  return /invalid\s*api\s*key|unauthorized|missing\s*api\s*key|forbidden|account.*suspended/i.test(
+    msg,
+  );
+}
+
+function isEmptyMapsResultMessage(msg: string): boolean {
+  return /hasn't returned any results|no results found|no places found/i.test(msg);
 }
 
 async function callSerpApi(
   params: Record<string, string | number | boolean>,
+  operation: string,
 ): Promise<unknown> {
   const api_key = requireKey();
   let raw: unknown;
+
   try {
-    raw = (await getJson({ ...params, api_key })) as unknown;
-  } catch (err) {
-    throw new SerpApiError(
-      err instanceof Error ? err.message : "SerpApi request failed.",
+    const fetchPromise = getJson({
+      ...params,
+      api_key,
+      timeout: DEFAULT_TIMEOUT_MS,
+    }) as Promise<unknown>;
+
+    raw = await withTimeout(
+      fetchPromise,
+      DEFAULT_TIMEOUT_MS + 1000,
+      operation,
     );
+  } catch (err) {
+    if (err instanceof SerpApiError) {
+      throw err;
+    }
+    const rawMessage = err instanceof Error ? err.message : String(err);
+    logSafeError(`Call failed for ${operation}`, err);
+
+    if (isRateLimitMessage(rawMessage)) {
+      throw new SerpApiRateLimitError();
+    }
+    if (isAuthErrorMessage(rawMessage)) {
+      throw new SerpApiAuthError();
+    }
+    throw new SerpApiError("External search service is temporarily unavailable.", {
+      statusCode: 502,
+      code: "UPSTREAM_FETCH_FAILED",
+      cause: err,
+    });
   }
+
+  // Check for error payload from SerpApi
   if (typeof raw === "object" && raw !== null && "error" in raw) {
-    const errField = (raw as { error?: unknown }).error;
-    if (typeof errField === "string" && errField.length > 0) {
-      throw new SerpApiError(`SerpApi error: ${errField}`);
+    const errField = String((raw as { error?: unknown }).error ?? "");
+    if (errField.length > 0) {
+      if (isEmptyMapsResultMessage(errField)) {
+        // Valid zero-results state from Google Maps
+        return { local_results: [] };
+      }
+      if (isRateLimitMessage(errField)) {
+        logSafeError(`Provider rate limit hit on ${operation}`, errField);
+        throw new SerpApiRateLimitError();
+      }
+      if (isAuthErrorMessage(errField)) {
+        logSafeError(`Provider auth error on ${operation}`, errField);
+        throw new SerpApiAuthError();
+      }
+      logSafeError(`Provider returned error for ${operation}`, errField);
+      throw new SerpApiError("External data provider returned an error.", {
+        statusCode: 502,
+        code: "UPSTREAM_ERROR_PAYLOAD",
+      });
     }
   }
+
   return raw;
 }
 
@@ -161,19 +311,44 @@ export async function fetchMapsPlaces(
   if (input.ll) params.ll = input.ll;
   if (input.start !== undefined) params.start = input.start;
 
-  const raw = await callSerpApi(params);
-  return mapsResponseSchema.parse(raw).local_results;
+  const raw = await callSerpApi(params, `Maps: ${input.q}`);
+  const parsed = mapsResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    logSafeError("Maps response failed schema validation", parsed.error);
+    // Graceful fallback: extract any valid places
+    if (
+      typeof raw === "object" &&
+      raw !== null &&
+      "local_results" in raw &&
+      Array.isArray((raw as { local_results: unknown }).local_results)
+    ) {
+      return (raw as { local_results: unknown[] }).local_results
+        .map((p) => mapsPlaceSchema.safeParse(p))
+        .filter((r): r is { success: true; data: MapsPlace } => r.success)
+        .map((r) => r.data);
+    }
+    return [];
+  }
+  return parsed.data.local_results;
 }
 
 export async function fetchPlaceReviews(
   dataId: string,
 ): Promise<PlaceReviews> {
-  const raw = await callSerpApi({
-    engine: "google_maps_reviews",
-    data_id: dataId,
-    hl: "en",
-  });
-  return reviewsResponseSchema.parse(raw);
+  const raw = await callSerpApi(
+    {
+      engine: "google_maps_reviews",
+      data_id: dataId,
+      hl: "en",
+    },
+    `Reviews: ${dataId}`,
+  );
+  const parsed = reviewsResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    logSafeError(`Reviews schema validation failed for ${dataId}`, parsed.error);
+    return { topics: [], reviews: [] };
+  }
+  return parsed.data;
 }
 
 export interface TrendsSearchInput {
@@ -186,17 +361,24 @@ export interface TrendsSearchInput {
 export async function fetchTrends(
   input: TrendsSearchInput,
 ): Promise<TrendsTimelinePoint[]> {
-  const raw = await callSerpApi({
-    engine: "google_trends",
-    data_type: "TIMESERIES",
-    q: input.q,
-    geo: input.geo,
-    date: input.date,
-  });
-  const parsed = trendsResponseSchema.parse(raw);
-  return parsed.interest_over_time?.timeline_data ?? [];
+  const raw = await callSerpApi(
+    {
+      engine: "google_trends",
+      data_type: "TIMESERIES",
+      q: input.q,
+      geo: input.geo,
+      date: input.date,
+    },
+    `Trends: ${input.q}`,
+  );
+  const parsed = trendsResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    logSafeError("Trends schema validation failed", parsed.error);
+    return [];
+  }
+  return parsed.data.interest_over_time?.timeline_data ?? [];
 }
 
 export function isSerpApiConfigured(): boolean {
-  return (serverEnv.SERPAPI_KEY ?? "").length > 0;
+  return (serverEnv.SERPAPI_KEY ?? "").trim().length > 0;
 }
