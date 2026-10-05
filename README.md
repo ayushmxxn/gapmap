@@ -1,6 +1,13 @@
-# GapMap
+<p align="center">
+  <img src="./public/logo.png" alt="GapMap Logo" width="80" />
+</p>
 
-> Local market opportunity and commercial gap analysis scanner. Evaluates local competitor density, customer review sentiment, and search demand trends before opening a business.
+<h1 align="center">GapMap</h1>
+
+<p align="center">
+  <strong>Local market opportunity and commercial gap analysis scanner.</strong><br>
+  Evaluates local competitor density, customer review sentiment, and search demand trends before opening a business.
+</p>
 
 ---
 
