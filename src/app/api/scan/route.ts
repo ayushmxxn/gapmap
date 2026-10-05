@@ -171,85 +171,85 @@ export async function POST(req: Request) {
       );
     }
 
-  // 2. Strict Input Validation
-  let rawBody: unknown;
-  try {
-    rawBody = await req.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON request body.", code: "INVALID_JSON" },
-      { status: 400 },
-    );
-  }
+    // 2. Strict Input Validation
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request body.", code: "INVALID_JSON" },
+        { status: 400 },
+      );
+    }
 
-  const parsedInput = inputSchema.safeParse(rawBody);
-  if (!parsedInput.success) {
-    const firstIssue = parsedInput.error.issues[0];
-    const message = firstIssue
-      ? `${firstIssue.path.join(".") || "input"}: ${firstIssue.message}`
-      : "Invalid scan parameters.";
-    return NextResponse.json(
-      { error: message, code: "VALIDATION_ERROR" },
-      { status: 400 },
-    );
-  }
+    const parsedInput = inputSchema.safeParse(rawBody);
+    if (!parsedInput.success) {
+      const firstIssue = parsedInput.error.issues[0];
+      const message = firstIssue
+        ? `${firstIssue.path.join(".") || "input"}: ${firstIssue.message}`
+        : "Invalid scan parameters.";
+      return NextResponse.json(
+        { error: message, code: "VALIDATION_ERROR" },
+        { status: 400 },
+      );
+    }
 
-  const { lat, lng, categoryId, areaLabel } = parsedInput.data;
-  const category = resolveCategory(categoryId);
+    const { lat, lng, categoryId, areaLabel } = parsedInput.data;
+    const category = resolveCategory(categoryId);
 
-  // 3. Resolve Scope (City-wide vs Neighborhood)
-  const resolvedScope = resolveLocationScope(areaLabel);
-  const scopeType = parsedInput.data.scope ?? resolvedScope.scope;
-  const isCity = scopeType === "city";
-  const cityName = resolvedScope.cityName;
+    // 3. Resolve Scope (City-wide vs Neighborhood)
+    const resolvedScope = resolveLocationScope(areaLabel);
+    const scopeType = parsedInput.data.scope ?? resolvedScope.scope;
+    const isCity = scopeType === "city";
+    const cityName = resolvedScope.cityName;
 
-  // 4. Mock Mode (Zero-cost, fully offline/safe)
-  const hasKey = (serverEnv.SERPAPI_KEY ?? "").trim().length > 0;
-  if (!hasKey || serverEnv.NEXT_PUBLIC_USE_MOCK) {
-    const mock = generateMockScanResult({
+    // 4. Mock Mode (Zero-cost, fully offline/safe)
+    const hasKey = (serverEnv.SERPAPI_KEY ?? "").trim().length > 0;
+    if (!hasKey || serverEnv.NEXT_PUBLIC_USE_MOCK) {
+      const mock = generateMockScanResult({
+        lat,
+        lng,
+        categoryId: category.id,
+        categoryLabel: category.label,
+        areaLabel,
+        scope: scopeType,
+      });
+      const parsedMock = scanResultSchema.safeParse(mock);
+      if (!parsedMock.success) {
+        logSafeError("Failed to validate mock scan result", parsedMock.error);
+        return NextResponse.json(
+          { error: "Internal error preparing scan data.", code: "INTERNAL_ERROR" },
+          { status: 500 },
+        );
+      }
+      return NextResponse.json(parsedMock.data);
+    }
+
+    // 5. In-flight Deduplication & Cache Check
+    const scanKey = getScanCacheKey({
       lat,
       lng,
       categoryId: category.id,
-      categoryLabel: category.label,
-      areaLabel,
       scope: scopeType,
     });
-    const parsedMock = scanResultSchema.safeParse(mock);
-    if (!parsedMock.success) {
-      logSafeError("Failed to validate mock scan result", parsedMock.error);
-      return NextResponse.json(
-        { error: "Internal error preparing scan data.", code: "INTERNAL_ERROR" },
-        { status: 500 },
-      );
+
+    const cachedResult = getCachedScan(scanKey);
+    if (cachedResult) {
+      return NextResponse.json(cachedResult);
     }
-    return NextResponse.json(parsedMock.data);
-  }
 
-  // 5. In-flight Deduplication & Cache Check
-  const scanKey = getScanCacheKey({
-    lat,
-    lng,
-    categoryId: category.id,
-    scope: scopeType,
-  });
-
-  const cachedResult = getCachedScan(scanKey);
-  if (cachedResult) {
-    return NextResponse.json(cachedResult);
-  }
-
-  const inFlight = getInFlightScan(scanKey);
-  if (inFlight) {
-    try {
-      const result = await inFlight;
-      return NextResponse.json(result);
-    } catch {
-      // If the running in-flight scan threw an error, fall through to attempt a fresh execution
+    const inFlight = getInFlightScan(scanKey);
+    if (inFlight) {
+      try {
+        const result = await inFlight;
+        return NextResponse.json(result);
+      } catch {
+        // If the running in-flight scan threw an error, fall through to attempt a fresh execution
+      }
     }
-  }
 
     // 6. Live Execution with In-Flight Tracking
-  const executionPromise = (async (): Promise<ScanResult> => {
+    const executionPromise = (async (): Promise<ScanResult> => {
     const ledger: LedgerEntry[] = [];
     let geoPlaces: (MapsPlace & { lat: number; lng: number })[] = [];
     let effectiveRadiusKm = SCAN_RADIUS_KM;
@@ -616,40 +616,40 @@ export async function POST(req: Request) {
     return validated;
   })();
 
-  setInFlightScan(scanKey, executionPromise);
+    setInFlightScan(scanKey, executionPromise);
 
-  try {
-    const result = await executionPromise;
-    return NextResponse.json(result);
-  } catch (err) {
-    if (err instanceof SerpApiError) {
-      logSafeError("Upstream SerpApi failure during scan", err);
-      return NextResponse.json(
-        { error: err.userMessage, code: err.code },
-        { status: err.statusCode },
-      );
-    }
-    if (err instanceof z.ZodError) {
-      logSafeError("Scan result schema validation failed", err);
+    try {
+      const result = await executionPromise;
+      return NextResponse.json(result);
+    } catch (err) {
+      if (err instanceof SerpApiError) {
+        logSafeError("Upstream SerpApi failure during scan", err);
+        return NextResponse.json(
+          { error: err.userMessage, code: err.code },
+          { status: err.statusCode },
+        );
+      }
+      if (err instanceof z.ZodError) {
+        logSafeError("Scan result schema validation failed", err);
+        return NextResponse.json(
+          {
+            error: "Internal error processing scan results.",
+            code: "SCHEMA_VALIDATION_ERROR",
+          },
+          { status: 500 },
+        );
+      }
+      logSafeError("Unhandled exception in /api/scan", err);
       return NextResponse.json(
         {
-          error: "Internal error processing scan results.",
-          code: "SCHEMA_VALIDATION_ERROR",
+          error: "An unexpected error occurred while processing the scan.",
+          code: "INTERNAL_ERROR",
         },
         { status: 500 },
       );
+    } finally {
+      clearInFlightScan(scanKey);
     }
-    logSafeError("Unhandled exception in /api/scan", err);
-    return NextResponse.json(
-      {
-        error: "An unexpected error occurred while processing the scan.",
-        code: "INTERNAL_ERROR",
-      },
-      { status: 500 },
-    );
-  } finally {
-    clearInFlightScan(scanKey);
-  }
   } catch (err) {
     logSafeError("Fatal unhandled exception in /api/scan POST", err);
     return NextResponse.json(
