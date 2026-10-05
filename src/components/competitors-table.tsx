@@ -1,3 +1,4 @@
+import * as React from "react";
 import type { Competitor } from "@/lib/scoring";
 import { formatReviewCount } from "@/lib/result-utils";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -9,12 +10,16 @@ export function CompetitorsTable({
   showAddress = false,
   showSamplingNote = false,
   scope = "neighborhood",
+  initialLimit = 6,
 }: {
   competitors: Competitor[];
   showAddress?: boolean;
   showSamplingNote?: boolean;
   scope?: "city" | "neighborhood";
+  initialLimit?: number;
 }) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
   if (competitors.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border/70 p-4 text-center text-xs text-muted-foreground">
@@ -25,8 +30,11 @@ export function CompetitorsTable({
     );
   }
 
+  const visibleCompetitors =
+    isExpanded || !initialLimit ? competitors : competitors.slice(0, initialLimit);
+
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2">
       <div className="overflow-x-auto rounded-xl border border-border/70 bg-card">
         <table className="w-full text-xs">
           <thead>
@@ -37,7 +45,7 @@ export function CompetitorsTable({
             </tr>
           </thead>
           <tbody>
-            {competitors.map((c) => (
+            {visibleCompetitors.map((c) => (
               <tr
                 key={`${c.title}-${c.lat ?? 0}-${c.lng ?? 0}`}
                 className="border-b border-border/40 last:border-0 transition-colors hover:bg-muted/25"
@@ -84,6 +92,29 @@ export function CompetitorsTable({
           </tbody>
         </table>
       </div>
+
+      {initialLimit && competitors.length > initialLimit && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-0.5 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors cursor-pointer self-start py-1"
+        >
+          <span>
+            {isExpanded
+              ? `Show fewer (top ${initialLimit})`
+              : `View all ${competitors.length} businesses`}
+          </span>
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            size={13}
+            strokeWidth={2}
+            className={cn(
+              "transition-transform duration-200",
+              isExpanded && "rotate-180",
+            )}
+          />
+        </button>
+      )}
 
       {showSamplingNote && (
         <details className="group rounded-xl border border-border/70 bg-card p-3.5 text-xs shadow-2xs">

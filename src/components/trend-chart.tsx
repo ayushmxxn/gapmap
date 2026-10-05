@@ -21,23 +21,18 @@ export function TrendChart({ trend }: { trend: ScanResult["trend"] }) {
 
   const directionText =
     trend.slopeScore > 55
-      ? "steadily rising over the past year"
+      ? "Search interest has been steadily rising over the past year."
       : trend.slopeScore < 45
-        ? "softening over the past year"
-        : "holding steady over the past year";
+        ? "Search interest has been softening over the past year."
+        : "Search interest has been holding steady over the past year.";
 
   return (
-    <div className="flex flex-col gap-2.5">
-      <div>
-        <p className="text-xs font-medium text-foreground">
-          Search interest is {directionText}.
-        </p>
-        <p className="text-[11px] text-muted-foreground">
-          Relative 12-month Google search trend trajectory.
-        </p>
-      </div>
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-normal text-muted-foreground leading-relaxed">
+        {directionText}
+      </p>
 
-      <div className="h-44 w-full rounded-xl border border-border/70 bg-card p-3 shadow-2xs">
+      <div className="h-44 w-full rounded-xl border border-border/60 bg-card p-3 shadow-2xs">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={trend.points} margin={{ top: 6, right: 6, bottom: 0, left: -24 }}>
             <XAxis

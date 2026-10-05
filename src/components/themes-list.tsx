@@ -8,20 +8,29 @@ export function ThemesList({
 }) {
   if (withheld || themes.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/70 p-4 text-xs text-muted-foreground">
+      <div className="rounded-xl border border-dashed border-border/70 p-4 text-xs text-muted-foreground">
         Not enough customer reviews in this immediate area to highlight recurring themes with confidence.
       </div>
     );
   }
 
-  const uniqueKeywords = Array.from(
-    new Set(themes.map((t) => t.keyword.trim().toLowerCase())),
-  );
-  const topThemes = uniqueKeywords.slice(0, 3);
+  // Aggregate mentions by normalized keyword to eliminate repetitive chips
+  const keywordMap = new Map<string, number>();
+  for (const t of themes) {
+    const key = t.keyword.trim().toLowerCase();
+    keywordMap.set(key, (keywordMap.get(key) ?? 0) + t.mentions);
+  }
+
+  const aggregatedThemes = Array.from(keywordMap.entries())
+    .map(([keyword, mentions]) => ({ keyword, mentions }))
+    .sort((a, b) => b.mentions - a.mentions)
+    .slice(0, 8);
+
+  const topThree = aggregatedThemes.slice(0, 3).map((t) => t.keyword);
   const themeSummary =
-    topThemes.length > 0
-      ? `Customers frequently mention ${topThemes.join(", ")} when discussing local businesses in this area.`
-      : "Recurring customer discussion topics across local businesses:";
+    topThree.length > 0
+      ? `Customers frequently mention ${topThree.join(", ")} when discussing local businesses in this area.`
+      : "Recurring customer discussion topics across local businesses.";
 
   return (
     <div className="flex flex-col gap-3">
@@ -29,16 +38,14 @@ export function ThemesList({
         {themeSummary}
       </p>
 
-      <div className="flex flex-wrap gap-1.5">
-        {themes.map((t) => (
+      <div className="flex flex-wrap gap-2">
+        {aggregatedThemes.map((t) => (
           <span
-            key={`${t.keyword}-${t.sourcePlace}`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card px-2.5 py-1 text-xs text-foreground shadow-2xs transition-colors hover:bg-muted/30"
+            key={t.keyword}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-muted/40"
           >
-            <span className="font-medium">
-              {t.keyword.charAt(0).toUpperCase() + t.keyword.slice(1).toLowerCase()}
-            </span>
-            <span className="text-[11px] text-muted-foreground tabular-nums">
+            <span className="font-medium capitalize">{t.keyword}</span>
+            <span className="text-[11px] font-normal text-muted-foreground tabular-nums">
               {t.mentions}
             </span>
           </span>

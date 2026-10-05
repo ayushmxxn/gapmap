@@ -4,10 +4,11 @@ import { EvidenceSheet } from "@/components/evidence-sheet";
 import { MapWrapper } from "@/components/map-wrapper";
 import { SignalSummary } from "@/components/signal-hero";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { LiquidMetalButton } from "@/components/liquid-metal-button";
+import { Button } from "@/components/ui/button";
 import { UnifiedSearch } from "@/components/unified-search";
 import { AREA_PRESETS, resolveCategory } from "@/lib/categories";
 import { postScan, scanUrl } from "@/lib/scan-client";
+import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -119,7 +120,7 @@ export function ScanStudio() {
     <div className="flex min-h-screen min-h-dvh flex-col bg-background text-foreground">
       {status !== "idle" && (
         <header className="sticky top-0 z-10 bg-white/95 dark:bg-card/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] transition-colors">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
+          <div className="mx-auto flex w-full max-w-7xl xl:max-w-[1380px] 2xl:max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:py-3 md:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
@@ -159,13 +160,11 @@ export function ScanStudio() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0">
-              <LiquidMetalButton
-                label="New scan"
-                width={112}
-                height={34}
-                showArrow={false}
+            <div className="flex items-center shrink-0">
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setStatus("idle");
                   setResult(null);
@@ -174,16 +173,23 @@ export function ScanStudio() {
                   setCategoryId("");
                   window.history.replaceState(null, "", "/");
                 }}
-              />
-              <ThemeToggle />
+                className="h-8.5 rounded-lg px-3.5 text-xs font-medium cursor-pointer border-0 shadow-none bg-[#f2f2f2] hover:bg-[#e8e8e8] text-foreground dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-all active:scale-[0.98]"
+              >
+                New scan
+              </Button>
             </div>
           </div>
         </header>
       )}
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-between px-4 py-4 md:px-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
+      <main
+        className={cn(
+          "mx-auto flex w-full flex-1 flex-col px-4 md:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]",
+          status === "idle" ? "max-w-6xl" : "max-w-7xl xl:max-w-[1380px] 2xl:max-w-[1440px]",
+        )}
+      >
         {status === "idle" && (
-          <div className="flex w-full flex-1 flex-col justify-between">
+          <div className="flex w-full flex-1 flex-col justify-between py-4">
             {/* Top row directly on hero section page - no separate navbar */}
             <div className="flex w-full items-center justify-between py-2 sm:py-2.5">
               <div className="flex items-center gap-2.5 select-none">
@@ -245,53 +251,71 @@ export function ScanStudio() {
         )}
 
         {status === "loading" && (
-          <div className="flex flex-col gap-6 py-4 sm:py-6" aria-live="polite">
-            <div className="relative grid gap-8 lg:grid-cols-[1.1fr_1fr] items-stretch">
+          <div className="w-full pt-2 sm:pt-3 lg:pt-3.5 pb-4 sm:pb-6" aria-live="polite">
+            <div className="grid gap-5 lg:gap-6 xl:gap-7 lg:grid-cols-[1fr_1.2fr] items-stretch w-full lg:h-[clamp(440px,calc(100dvh-6.5rem),520px)]">
               {/* Left Card Skeleton: Mirrors SignalSummary */}
-              <div className="flex min-h-[380px] sm:min-h-[440px] lg:min-h-[460px] flex-col justify-between rounded-2xl border border-neutral-200 dark:border-border bg-white dark:bg-card p-6 md:p-8 shadow-xs animate-pulse">
+              <div className="flex flex-col justify-between rounded-2xl border border-neutral-200 dark:border-border bg-white dark:bg-card p-6 sm:p-7 xl:p-8 shadow-xs animate-pulse">
                 <div>
+                  {/* Context line skeleton */}
                   <div className="flex items-center gap-2">
-                    <div className="h-3.5 w-24 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                    <div className="h-3.5 w-28 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                     <div className="size-1 rounded-full bg-[#d4d4d4] dark:bg-zinc-700" />
                     <div className="h-3.5 w-16 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                   </div>
-                  <div className="mt-4 h-7 w-3/4 rounded-lg bg-[#e5e5e5] dark:bg-zinc-800" />
-                  <div className="mt-2 h-7 w-1/2 rounded-lg bg-[#e5e5e5] dark:bg-zinc-800" />
 
-                  <div className="mt-6 flex items-baseline gap-4">
-                    <div className="h-14 w-20 rounded-xl bg-[#e5e5e5] dark:bg-zinc-800" />
-                    <div className="h-5 w-28 rounded-md bg-[#e8e8e8] dark:bg-zinc-800" />
+                  {/* Score + verdict skeleton */}
+                  <div className="mt-4 sm:mt-5 flex items-baseline gap-3.5">
+                    <div className="h-14 sm:h-16 w-24 rounded-xl bg-[#e5e5e5] dark:bg-zinc-800" />
+                    <div className="h-6 w-28 rounded-full bg-[#e8e8e8] dark:bg-zinc-800" />
                   </div>
 
-                  <div className="mt-6 space-y-2.5 border-t border-neutral-200 dark:border-border/60 pt-4">
-                    <div className="h-3.5 w-full rounded bg-[#e8e8e8] dark:bg-zinc-800" />
-                    <div className="h-3.5 w-4/5 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                  {/* Synthesis text skeleton */}
+                  <div className="mt-3 sm:mt-4 space-y-2">
+                    <div className="h-3.5 w-11/12 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                    <div className="h-3.5 w-3/4 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                  </div>
+
+                  {/* Supporting factors skeleton */}
+                  <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-neutral-200 dark:border-border/60">
+                    <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                      <div className="space-y-1.5">
+                        <div className="h-2.5 w-12 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                        <div className="h-4 w-16 rounded bg-[#e5e5e5] dark:bg-zinc-800" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="h-2.5 w-14 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                        <div className="h-4 w-16 rounded bg-[#e5e5e5] dark:bg-zinc-800" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="h-2.5 w-16 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                        <div className="h-4 w-14 rounded bg-[#e5e5e5] dark:bg-zinc-800" />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-3 gap-3 border-t border-neutral-200 dark:border-border/60 pt-6">
-                  <div className="h-12 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-[#f2f2f2] dark:bg-zinc-800/80" />
-                  <div className="h-12 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-[#f2f2f2] dark:bg-zinc-800/80" />
-                  <div className="h-12 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-[#f2f2f2] dark:bg-zinc-800/80" />
+                {/* Footer stats + button skeleton */}
+                <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-neutral-200 dark:border-border/60 flex items-center justify-between">
+                  <div className="h-3.5 w-44 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                  <div className="h-8 w-28 rounded-lg bg-[#e8e8e8] dark:bg-zinc-800" />
                 </div>
               </div>
 
               {/* Right Card Skeleton: Mirrors Local Map */}
-              <div className="relative flex h-[320px] sm:h-[400px] lg:h-[460px] min-h-[320px] sm:min-h-[400px] lg:min-h-[460px] w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 dark:border-border bg-[#fafafa] dark:bg-zinc-900/60 p-6 shadow-xs animate-pulse">
-                {/* Concentric scan target - strictly neutral monochrome, zero blue */}
+              <div className="relative flex min-h-[340px] sm:min-h-[380px] lg:min-h-0 h-full w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 dark:border-border bg-[#fafafa] dark:bg-zinc-900/60 p-6 shadow-xs animate-pulse">
                 <div className="relative flex items-center justify-center">
-                  <div className="size-40 rounded-full border border-neutral-300/80 dark:border-zinc-800 bg-[#f2f2f2]/70 dark:bg-zinc-800/30" />
-                  <div className="absolute size-24 rounded-full border border-neutral-300 dark:border-zinc-700 bg-[#e8e8e8] dark:bg-zinc-800/70" />
-                  <div className="absolute size-10 rounded-full bg-[#d4d4d4] dark:bg-zinc-600" />
+                  <div className="size-36 rounded-full border border-neutral-300/80 dark:border-zinc-800 bg-[#f2f2f2]/70 dark:bg-zinc-800/30" />
+                  <div className="absolute size-20 rounded-full border border-neutral-300 dark:border-zinc-700 bg-[#e8e8e8] dark:bg-zinc-800/70" />
+                  <div className="absolute size-8 rounded-full bg-[#d4d4d4] dark:bg-zinc-600" />
                 </div>
-                <div className="mt-6 h-3.5 w-32 rounded-full bg-[#e5e5e5] dark:bg-zinc-800" />
+                <div className="mt-5 h-3 w-28 rounded-full bg-[#e5e5e5] dark:bg-zinc-800" />
               </div>
             </div>
           </div>
         )}
 
         {status === "error" && (
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-6 text-xs text-muted-foreground">
+          <div className="rounded-2xl border border-border/60 bg-muted/20 p-6 text-xs text-muted-foreground my-8">
             <p className="font-semibold text-foreground text-sm">
               Scan could not be completed
             </p>
@@ -300,13 +324,13 @@ export function ScanStudio() {
         )}
 
         {status === "success" && result && (
-          <div className="flex flex-col gap-6" id="gap-result">
-            <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] items-stretch">
+          <div className="w-full pt-2 sm:pt-3 lg:pt-3.5 pb-4 sm:pb-6" id="gap-result">
+            <div className="grid gap-5 lg:gap-6 xl:gap-7 lg:grid-cols-[1fr_1.2fr] items-stretch w-full lg:h-[clamp(440px,calc(100dvh-6.5rem),520px)]">
               <SignalSummary
                 result={result}
                 onOpenEvidence={() => setSheetOpen(true)}
               />
-              <div className="h-[460px] min-h-[460px] w-full">
+              <div className="w-full min-h-[340px] sm:min-h-[380px] lg:min-h-0 h-full">
                 <MapWrapper
                   competitors={result.competitors}
                   mode="local"

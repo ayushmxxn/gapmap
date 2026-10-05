@@ -10,9 +10,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import {
   getMapboxToken,
   isMapboxConfigured,
-  MAPBOX_SATELLITE,
   MAPBOX_STYLE,
-  MAPBOX_STYLE_DARK,
 } from "@/lib/mapbox";
 import { SCAN_RADIUS_KM } from "@/lib/geo";
 import { AREA_PRESETS } from "@/lib/categories";
@@ -125,13 +123,7 @@ export function DiscoveryMap({
   const [mapError, setMapError] = React.useState(false);
 
   const isDark = mounted && resolvedTheme === "dark";
-  /* Satellite Earth for globe discovery; detailed streets for local analysis. */
-  const mapStyle =
-    !isLocal && projection === "globe"
-      ? MAPBOX_SATELLITE
-      : isDark
-        ? MAPBOX_STYLE_DARK
-        : MAPBOX_STYLE;
+  const mapStyle = MAPBOX_STYLE;
 
   const radiusGeoJson = React.useMemo(
     () =>
@@ -157,43 +149,18 @@ export function DiscoveryMap({
             /* style without this config; ignore */
           }
         }
-        /* Dark navy space + subtle stars; rim kept to a whisper. */
-        map.setFog?.(
-          dark
-            ? {
-                color: "#060a18",
-                "high-color": "#060a18",
-                "horizon-blend": 0.05,
-                "space-color": "#02040c",
-                "star-intensity": 0.45,
-              }
-            : {
-                color: "#0a1020",
-                "high-color": "#0a1020",
-                "horizon-blend": 0.05,
-                "space-color": "#04060e",
-                "star-intensity": 0.35,
-              },
-        );
+        const spaceBg = dark ? "#191b19" : "#ffffff";
+        /* Clean globe boundary with zero blue atmospheric halo/glow */
+        map.setFog?.({
+          color: spaceBg,
+          "high-color": spaceBg,
+          "horizon-blend": 0,
+          "space-color": spaceBg,
+          "star-intensity": 0,
+        });
       } else {
         map.setProjection?.("mercator");
-        map.setFog?.(
-          dark
-            ? {
-                color: "#0b0b19",
-                "high-color": "#1e40af",
-                "horizon-blend": 0.12,
-                "space-color": "#040409",
-                "star-intensity": 0.55,
-              }
-            : {
-                color: "rgb(186, 210, 235)",
-                "high-color": "rgb(36, 92, 223)",
-                "horizon-blend": 0.08,
-                "space-color": "rgb(232, 238, 245)",
-                "star-intensity": 0,
-              },
-        );
+        map.setFog?.({});
       }
     },
     [],
@@ -641,14 +608,14 @@ export function DiscoveryMap({
           )}
         </Map>
       ) : mapError ? (
-        <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground bg-[#080d1a] rounded-3xl border border-border/40">
+        <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground bg-muted/20 rounded-2xl border border-border/40">
           <p className="font-medium text-foreground">Map preview unavailable</p>
           <p className="mt-1 max-w-xs text-muted-foreground/80">
             Opportunity scanner and analytics remain fully operational.
           </p>
         </div>
       ) : (
-        <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[#080d1a] text-xs text-muted-foreground/70">
+        <div className="flex h-full w-full items-center justify-center rounded-2xl bg-muted/20 text-xs text-muted-foreground/70">
           <div className="flex items-center gap-2">
             <span className="size-2 rounded-full bg-emerald-500/80 animate-pulse" />
             <span>Loading map…</span>

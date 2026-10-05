@@ -42,115 +42,93 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
   const conclusion = getPlainEnglishConclusion(result);
 
   const isCityScope = result.scope?.type === "city" || result.area.scope === "city";
-  const scopeLabel =
-    result.scope?.label ??
-    (isCityScope
-      ? `City-wide scan · ${result.scope?.cityName || result.area.label.split(",")[0]}`
-      : "Neighborhood scan · 1.5 km");
 
   return (
-    <section className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-6 md:p-8 shadow-xs">
+    <section className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-6 sm:p-7 xl:p-8 shadow-xs h-full">
       <div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-            <span className="font-semibold text-foreground">{result.area.label}</span>
-            <span className="text-muted-foreground/40">·</span>
-            <span>{result.category.label}</span>
+        {/* 1. Context: Location + Business analyzed */}
+        <div className="flex items-center gap-1.5 text-xs sm:text-[13px] text-muted-foreground font-medium truncate">
+          <span className="font-semibold text-foreground truncate max-w-72 sm:max-w-md">{result.area.label}</span>
+          <span className="text-muted-foreground/35">·</span>
+          <span className="text-foreground/85 whitespace-nowrap">{result.category.label}</span>
+        </div>
+
+        {/* 2 & 3. Opportunity Score & Human Verdict */}
+        <div className="mt-4 sm:mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-6xl sm:text-[68px] font-semibold tracking-[-0.04em] tabular-nums text-foreground leading-none">
+              {gapSignal.score}
+            </span>
+            <span className="text-xl sm:text-2xl font-light tracking-tight text-muted-foreground/60 select-none">
+              /100
+            </span>
           </div>
 
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-tight",
-              isCityScope
-                ? "border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-foreground"
-                : "border border-border/80 bg-muted/50 text-muted-foreground",
+              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium self-center",
+              gapSignal.verdict === "strong" &&
+                "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+              gapSignal.verdict === "moderate" &&
+                "bg-amber-500/10 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+              gapSignal.verdict === "weak" &&
+                "bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400",
             )}
           >
-            <span
-              className={cn(
-                "size-1.5 rounded-full shrink-0",
-                isCityScope ? "bg-foreground/70" : "bg-muted-foreground/70",
-              )}
-            />
-            <span>{scopeLabel}</span>
+            {verdictLabel}
           </span>
         </div>
 
-        <h1 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-foreground leading-tight">
-          Should I consider opening this business here?
-        </h1>
-
-        <div className="mt-6 flex flex-wrap items-baseline gap-4">
-          <div className="flex items-baseline">
-            <span className="text-5xl md:text-6xl font-semibold tracking-tight tabular-nums text-foreground">
-              {gapSignal.score}
-            </span>
-            <span className="text-xl font-normal text-muted-foreground/70 ml-1.5">/100</span>
-          </div>
-
-          <div
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
-              gapSignal.verdict === "strong" &&
-                "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-              gapSignal.verdict === "moderate" &&
-                "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-              gapSignal.verdict === "weak" &&
-                "border-zinc-500/20 bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
-            )}
-          >
-            <span
-              className={cn(
-                "size-1.5 rounded-full shrink-0",
-                gapSignal.verdict === "strong" && "bg-emerald-500",
-                gapSignal.verdict === "moderate" && "bg-amber-500",
-                gapSignal.verdict === "weak" && "bg-zinc-400 dark:bg-zinc-600",
-              )}
-            />
-            <span>{verdictLabel}</span>
-          </div>
-        </div>
-
-        <p className="mt-4 text-base md:text-lg font-normal leading-relaxed text-foreground/90">
-          &ldquo;{conclusion}&rdquo;
+        {/* 4. Why: Concise Plain-English Synthesis */}
+        <p className="mt-3 sm:mt-4 text-sm sm:text-[15px] font-normal leading-relaxed text-foreground/90 text-balance max-w-xl">
+          {conclusion}
         </p>
 
-        <div className="mt-8 border-t border-border/50 pt-6">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {/* 3 Supporting Factors: Clean, borderless columns with whitespace */}
+        <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-border/50">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
             {factors.map((f) => (
-              <div
-                key={f.label}
-                className="flex flex-col gap-1 rounded-xl border border-border/60 bg-muted/25 p-3.5 transition-colors hover:border-border/90"
-              >
-                <span className="text-[11px] font-medium text-muted-foreground">{f.label}</span>
-                <span className="text-sm font-semibold text-foreground tracking-tight">{f.value}</span>
+              <div key={f.label} className="flex flex-col gap-0.5 sm:gap-1">
+                <span className="text-[11px] sm:text-xs font-normal text-muted-foreground">
+                  {f.label}
+                </span>
+                <span className="text-xs sm:text-[14px] lg:text-[15px] font-semibold text-foreground tracking-tight">
+                  {f.value}
+                </span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="mt-8 flex flex-col gap-4 border-t border-border/50 pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{result.stats.places}</span>{" "}
-          {isCityScope ? "places across city" : "nearby places"}
-          <span className="text-muted-foreground/40 mx-1.5">·</span>
-          <span className="font-medium text-foreground">{formatReviewCount(result.stats.totalReviews)}</span> reviews
-          <span className="text-muted-foreground/40 mx-1.5">·</span>
-          <span className="font-medium text-foreground">
-            {avgRating != null ? `${avgRating.toFixed(1)}★` : "Unrated"}
-          </span> average
-        </p>
+      {/* 5 & 6. Mapped Competitors Summary & Evidence Action */}
+      <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-border/50 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-1.5 text-xs sm:text-[12.5px] text-muted-foreground flex-wrap">
+          <span className="font-semibold text-foreground">{result.stats.places}</span>
+          <span>{isCityScope ? "places mapped" : "nearby competitors"}</span>
+          <span className="text-muted-foreground/35 mx-1">·</span>
+          <span className="font-semibold text-foreground">
+            {formatReviewCount(result.stats.totalReviews)}
+          </span>
+          <span>reviews</span>
+          {avgRating != null && (
+            <>
+              <span className="text-muted-foreground/35 mx-1">·</span>
+              <span className="font-semibold text-foreground">{avgRating.toFixed(1)}★</span>
+              <span>avg</span>
+            </>
+          )}
+        </div>
 
         <Button
           type="button"
           onClick={onOpenEvidence}
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="h-8.5 rounded-lg px-3.5 text-xs font-medium cursor-pointer shadow-2xs hover:bg-muted transition-all active:scale-[0.98] shrink-0 gap-1.5"
+          className="h-8.5 rounded-lg px-3.5 text-xs font-medium cursor-pointer border-0 shadow-none bg-[#f2f2f2] hover:bg-[#e8e8e8] text-foreground dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-all active:scale-[0.98] shrink-0 gap-1.5 self-start sm:self-auto"
         >
           <span>See the evidence</span>
-          <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={2} />
+          <HugeiconsIcon icon={ArrowRight01Icon} size={13} strokeWidth={2} />
         </Button>
       </div>
     </section>
