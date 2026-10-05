@@ -12,6 +12,7 @@ interface LiquidMetalButtonProps {
   disabled?: boolean;
   title?: string;
   width?: number;
+  height?: number;
   showArrow?: boolean;
 }
 
@@ -22,6 +23,7 @@ export function LiquidMetalButton({
   disabled = false,
   title,
   width = 196,
+  height = 46,
   showArrow = true,
 }: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = React.useState(false);
@@ -38,13 +40,13 @@ export function LiquidMetalButton({
   const dimensions = React.useMemo(() => {
     return {
       width,
-      height: 46,
+      height,
       innerWidth: width - 4,
-      innerHeight: 42,
+      innerHeight: height - 4,
       shaderWidth: width,
-      shaderHeight: 46,
+      shaderHeight: height,
     };
-  }, [width]);
+  }, [width, height]);
 
   const displayLabel = React.useMemo(() => {
     return label.replace(/\s*[→›>]\s*$/, "");

@@ -4,7 +4,7 @@ import { EvidenceSheet } from "@/components/evidence-sheet";
 import { MapWrapper } from "@/components/map-wrapper";
 import { SignalSummary } from "@/components/signal-hero";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
+import { LiquidMetalButton } from "@/components/liquid-metal-button";
 import { UnifiedSearch } from "@/components/unified-search";
 import { AREA_PRESETS, resolveCategory } from "@/lib/categories";
 import { postScan, scanUrl } from "@/lib/scan-client";
@@ -159,11 +159,13 @@ export function ScanStudio() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
+            <div className="flex items-center gap-2.5 shrink-0">
+              <LiquidMetalButton
+                label="New scan"
+                width={112}
+                height={34}
+                showArrow={false}
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => {
                   setStatus("idle");
                   setResult(null);
@@ -172,10 +174,7 @@ export function ScanStudio() {
                   setCategoryId("");
                   window.history.replaceState(null, "", "/");
                 }}
-                className="h-8 px-3 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-              >
-                New scan
-              </Button>
+              />
               <ThemeToggle />
             </div>
           </div>
