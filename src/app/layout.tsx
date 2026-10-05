@@ -4,12 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "https://gapmap.app");
+import { siteUrl } from "@/lib/env";
 
 const title = "GapMap — Local Market Opportunity & Business Feasibility Scanner";
 const description =

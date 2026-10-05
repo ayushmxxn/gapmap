@@ -24,37 +24,22 @@ export function filterWithinRadius<T extends GeoPoint>(
 
 /**
  * Filters places for a city-wide scan.
- * Unlike neighborhood scans, city scans cover the entire metropolitan area (up to 25km)
- * and do not truncate results to a tight 1.5km center circle.
+ * Unlike neighborhood scans (which constrain to a tight 1.5km circle),
+ * city scans cover the broader metropolitan area up to maxMetroRadiusKm (default 25km)
+ * using radial distance as the authoritative boundary mechanism.
  */
-export function filterWithinCity<T extends GeoPoint & { address?: string }>(
+export function filterWithinCity<T extends GeoPoint>(
   places: T[],
   center: GeoPoint,
-  cityName?: string,
+  _cityName?: string,
   maxMetroRadiusKm: number = CITY_DEFAULT_METRO_RADIUS_KM,
 ): T[] {
   const origin = point([center.lng, center.lat]);
-  const cityTokens = cityName
-    ? cityName
-        .toLowerCase()
-        .split(/[\s,]+/)
-        .filter((w) => w.length > 2)
-    : [];
 
   return places.filter((p) => {
     if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return false;
     const dist = distance(origin, point([p.lng, p.lat]), { units: "kilometers" });
-    if (dist > maxMetroRadiusKm) return false;
-
-    // If city tokens are available and address is provided, prefer matching places
-    if (cityTokens.length > 0 && p.address) {
-      const addrLower = p.address.toLowerCase();
-      // If address matches another completely different city (more than 50km), Turf dist already excluded it.
-      if (cityTokens.some((tok) => addrLower.includes(tok))) {
-        return true;
-      }
-    }
-    return true;
+    return dist <= maxMetroRadiusKm;
   });
 }
 

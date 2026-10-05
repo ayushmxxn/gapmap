@@ -42,6 +42,26 @@ describe("Geospatial: filterWithinCity", () => {
     expect(filterWithinCity([], center, "Delhi")).toEqual([]);
   });
 
+  it("filters out invalid/non-finite coordinates", () => {
+    const places = [
+      { name: "Valid", lat: 28.62, lng: 77.21 },
+      { name: "NaN Lat", lat: Number.NaN, lng: 77.21 },
+      { name: "Infinity Lng", lat: 28.62, lng: Number.POSITIVE_INFINITY },
+    ];
+    const filtered = filterWithinCity(places, center);
+    expect(filtered.map((p) => p.name)).toEqual(["Valid"]);
+  });
+
+  it("preserves places within metro boundary regardless of address content", () => {
+    const places = [
+      { name: "Place A", address: "Sector 18, Block B", lat: 28.57, lng: 77.32 }, // No "Delhi" in address
+      { name: "Place B", lat: 28.63, lng: 77.21 }, // Missing address field entirely
+      { name: "Place C", address: "Highway NH8, Distant", lat: 27.5, lng: 76.5 }, // >100km away
+    ];
+    const filtered = filterWithinCity(places, center, "Delhi");
+    expect(filtered.map((p) => p.name)).toEqual(["Place A", "Place B"]);
+  });
+
   it("includes metropolitan locations within maxMetroRadiusKm and excludes distant cities", () => {
     const places = [
       { name: "Connaught Place", lat: 28.6315, lng: 77.2167 }, // ~2 km
@@ -54,6 +74,15 @@ describe("Geospatial: filterWithinCity", () => {
       "Connaught Place",
       "Noida Sector 18",
     ]);
+  });
+
+  it("defaults to 25km radius when maxMetroRadiusKm is not passed", () => {
+    const places = [
+      { name: "Metro Margin (20km)", lat: 28.79, lng: 77.209 }, // ~19.5 km
+      { name: "Beyond Default (35km)", lat: 28.93, lng: 77.209 }, // ~35 km
+    ];
+    const filtered = filterWithinCity(places, center);
+    expect(filtered.map((p) => p.name)).toEqual(["Metro Margin (20km)"]);
   });
 });
 
