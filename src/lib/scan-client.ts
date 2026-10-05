@@ -1,14 +1,13 @@
 "use client";
 
-import { scanResultSchema, type ScanResult } from "@/lib/scoring";
+import {
+  scanRequestSchema,
+  scanResultSchema,
+  type ScanInput,
+  type ScanResult,
+} from "@/types/scan";
 
-export interface ScanInput {
-  lat: number;
-  lng: number;
-  categoryId: string;
-  areaLabel: string;
-  scope?: "city" | "neighborhood";
-}
+export { scanRequestSchema, type ScanInput };
 
 export class ScanClientError extends Error {
   public readonly code: string;

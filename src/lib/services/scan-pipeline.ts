@@ -29,6 +29,7 @@ import {
   type LedgerEntry,
   type PlaceTheme,
   type ScanResult,
+  type ScanInput,
 } from "@/lib/scoring";
 import { generateMockScanResult } from "@/lib/mock";
 import { resolveLocationScope } from "@/lib/location-scope";
@@ -64,13 +65,7 @@ const COMPLAINT_HINTS = [
   "parking",
 ];
 
-export interface ScanPipelineInput {
-  lat: number;
-  lng: number;
-  categoryId: string;
-  areaLabel: string;
-  scope?: "city" | "neighborhood";
-}
+export type ScanPipelineInput = ScanInput;
 
 function placeKey(p: MapsPlace): string {
   return (

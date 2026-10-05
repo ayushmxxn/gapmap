@@ -12,6 +12,7 @@ export interface GeocodingResult {
 }
 
 const MAX_GEOCODE_CACHE = 100;
+const GEOCODE_TIMEOUT_MS = 6000; // 6s defensive timeout to prevent UI hangs
 const searchPlacesCache = new Map<string, GeocodingResult[]>();
 const reverseGeocodeCache = new Map<string, string>();
 
@@ -38,7 +39,8 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
   if (isMockMode() || !isMapboxConfigured()) {
     const results = fallbackResults();
     if (searchPlacesCache.size >= MAX_GEOCODE_CACHE) {
-      searchPlacesCache.delete(searchPlacesCache.keys().next().value!);
+      const oldest = searchPlacesCache.keys().next().value;
+      if (oldest) searchPlacesCache.delete(oldest);
     }
     searchPlacesCache.set(clean, results);
     return results;
@@ -49,7 +51,9 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
       clean,
     )}.json?access_token=${token}&autocomplete=true&types=place,locality,neighborhood,address,poi&limit=5`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS),
+    });
     if (!res.ok) throw new Error("Geocoding failed");
     const data = await res.json();
     if (!data.features || !Array.isArray(data.features)) return [];
@@ -79,7 +83,8 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
     );
 
     if (searchPlacesCache.size >= MAX_GEOCODE_CACHE) {
-      searchPlacesCache.delete(searchPlacesCache.keys().next().value!);
+      const oldest = searchPlacesCache.keys().next().value;
+      if (oldest) searchPlacesCache.delete(oldest);
     }
     searchPlacesCache.set(clean, mapped);
     return mapped;
@@ -114,7 +119,9 @@ export async function reverseGeocode(
   try {
     const token = getMapboxToken();
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&types=neighborhood,locality,place,address&limit=1`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS),
+    });
     if (!res.ok) throw new Error("Reverse geocoding failed");
     const data = await res.json();
     const feature = data.features?.[0];
@@ -123,7 +130,8 @@ export async function reverseGeocode(
       : "Selected location";
 
     if (reverseGeocodeCache.size >= MAX_GEOCODE_CACHE) {
-      reverseGeocodeCache.delete(reverseGeocodeCache.keys().next().value!);
+      const oldest = reverseGeocodeCache.keys().next().value;
+      if (oldest) reverseGeocodeCache.delete(oldest);
     }
     reverseGeocodeCache.set(cacheKey, resolvedLabel);
     return resolvedLabel;

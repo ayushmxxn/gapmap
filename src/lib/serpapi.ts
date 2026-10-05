@@ -309,17 +309,19 @@ export interface MapsSearchInput {
   q: string;
   ll?: string;
   start?: number;
+  gl?: string;
 }
 
 export async function fetchMapsPlaces(
   input: MapsSearchInput,
 ): Promise<MapsPlace[]> {
+  const gl = input.gl?.trim();
   const params: Record<string, string | number | boolean> = {
     engine: "google_maps",
     type: "search",
     q: input.q,
     hl: "en",
-    gl: "in",
+    gl: gl && gl.length > 0 ? gl : "in",
   };
   if (input.ll) params.ll = input.ll;
   if (input.start !== undefined) params.start = input.start;

@@ -47,6 +47,32 @@ export interface GapSignal {
 
 /* ---------------- Shared Zod Schemas & Entity Contracts ---------------- */
 
+export const scanRequestSchema = z.object({
+  lat: z
+    .number()
+    .finite("Latitude must be a valid number")
+    .min(-90, "Latitude must be between -90 and 90")
+    .max(90, "Latitude must be between -90 and 90"),
+  lng: z
+    .number()
+    .finite("Longitude must be a valid number")
+    .min(-180, "Longitude must be between -180 and 180")
+    .max(180, "Longitude must be between -180 and 180"),
+  categoryId: z
+    .string()
+    .trim()
+    .min(1, "Category cannot be empty")
+    .max(50, "Category exceeds maximum length")
+    .regex(/^[a-zA-Z0-9\s\-_'&.]+$/, "Category contains invalid characters"),
+  areaLabel: z
+    .string()
+    .trim()
+    .min(1, "Location label cannot be empty")
+    .max(150, "Location label exceeds maximum length"),
+  scope: z.enum(["city", "neighborhood"]).optional(),
+});
+export type ScanInput = z.infer<typeof scanRequestSchema>;
+
 export const ledgerEntrySchema = z.object({
   id: z.string(),
   engine: z.enum(["google_maps", "google_maps_reviews", "google_trends"]),

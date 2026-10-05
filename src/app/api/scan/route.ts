@@ -3,31 +3,7 @@ import { z } from "zod";
 import { SerpApiError, logSafeError } from "@/lib/serpapi";
 import { checkRateLimit, extractClientIp } from "@/lib/rate-limit";
 import { executeScanPipeline } from "@/lib/services/scan-pipeline";
-
-const inputSchema = z.object({
-  lat: z
-    .number()
-    .finite("Latitude must be a valid number")
-    .min(-90, "Latitude must be between -90 and 90")
-    .max(90, "Latitude must be between -90 and 90"),
-  lng: z
-    .number()
-    .finite("Longitude must be a valid number")
-    .min(-180, "Longitude must be between -180 and 180")
-    .max(180, "Longitude must be between -180 and 180"),
-  categoryId: z
-    .string()
-    .trim()
-    .min(1, "Category cannot be empty")
-    .max(50, "Category exceeds maximum length")
-    .regex(/^[a-zA-Z0-9\s\-_'&.]+$/, "Category contains invalid characters"),
-  areaLabel: z
-    .string()
-    .trim()
-    .min(1, "Location label cannot be empty")
-    .max(150, "Location label exceeds maximum length"),
-  scope: z.enum(["city", "neighborhood"]).optional(),
-});
+import { scanRequestSchema } from "@/types/scan";
 
 export async function POST(req: Request) {
   try {
@@ -60,7 +36,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const parsedInput = inputSchema.safeParse(rawBody);
+    const parsedInput = scanRequestSchema.safeParse(rawBody);
     if (!parsedInput.success) {
       const firstIssue = parsedInput.error.issues[0];
       const message = firstIssue
