@@ -12,12 +12,14 @@ import {
   MAPBOX_STYLE,
 } from "@/lib/mapbox";
 import { SCAN_RADIUS_KM } from "@/lib/geo";
-import { AREA_PRESETS } from "@/lib/categories";
+import { AREA_PRESETS } from "@/lib/places";
 import { useAppStore } from "@/store/app";
 import type { Competitor } from "@/lib/scoring";
-import { cn } from "@/lib/utils";
 import { formatReviewCount } from "@/lib/result-utils";
 import { reverseGeocode } from "@/lib/mapbox-geocoding";
+
+import { getOptimalGlobeZoom, competitorKey, pinColor } from "@/lib/map-utils";
+import { CompetitorMarker } from "@/components/competitor-marker";
 
 type Projection = "globe" | "mercator";
 
@@ -26,90 +28,6 @@ const LOCAL_ZOOM = 14;
 /** Above this zoom we render flat; below it we render the globe. */
 const FLAT_ZOOM = 9;
 const ROUND_ZOOM = 5;
-
-/**
- * Calculates the exact Mapbox globe camera zoom level required to fit the entire Earth
- * sphere within the container with comfortable breathing room on all sides.
- */
-function getOptimalGlobeZoom(
-  width: number,
-  height: number,
-  targetRatio = 0.70,
-): number {
-  if (!width || !height) return 1.35;
-  const minDim = Math.min(width, height);
-  const targetDiameter = minDim * targetRatio;
-  const fovRad = (36.86989764584402 * Math.PI) / 180;
-  const focalLength = (height / 2) / Math.tan(fovRad / 2);
-  const targetRadius = targetDiameter / 2;
-  const t = targetRadius / focalLength;
-  const s = t / Math.sqrt(1 + t * t);
-  const globeRadius = (s / (1 - s)) * focalLength;
-  const zoom = Math.log2((2 * Math.PI * globeRadius) / 512);
-  return Math.max(0.4, Math.min(2.5, Number(zoom.toFixed(2))));
-}
-
-function pinColor(rating: number | undefined): string {
-  if (rating == null) return "#71717a";
-  if (rating >= 4.3) return "#16a34a";
-  if (rating >= 3.7) return "#d97706";
-  return "#dc2626";
-}
-
-function competitorKey(c: Competitor): string {
-  return `${c.title}-${c.lat}-${c.lng}`;
-}
-
-const CompetitorMarker = React.memo(function CompetitorMarker({
-  competitor,
-  isSelected,
-  onSelect,
-}: {
-  competitor: Competitor;
-  isSelected: boolean;
-  onSelect: (c: Competitor) => void;
-}) {
-  const handleClick = React.useCallback(
-    (e: { originalEvent: MouseEvent }) => {
-      e.originalEvent.stopPropagation();
-      onSelect(competitor);
-    },
-    [competitor, onSelect],
-  );
-
-  return (
-    <Marker
-      longitude={competitor.lng!}
-      latitude={competitor.lat!}
-      anchor="bottom"
-      onClick={handleClick}
-    >
-      <button
-        type="button"
-        aria-label={`View competitor ${competitor.title}, rating: ${competitor.rating != null ? competitor.rating.toFixed(1) : "unrated"}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(competitor);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.stopPropagation();
-            onSelect(competitor);
-          }
-        }}
-        className={cn(
-          "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          isSelected && "scale-125 ring-2 ring-white dark:ring-black",
-        )}
-        style={{ backgroundColor: pinColor(competitor.rating) }}
-        title={competitor.title}
-      >
-        {competitor.rating != null ? competitor.rating.toFixed(1) : "–"}
-      </button>
-    </Marker>
-  );
-});
 
 interface GlobeCapableMap {
   setProjection?: (name: string) => void;

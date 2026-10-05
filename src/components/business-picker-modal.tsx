@@ -11,6 +11,7 @@ import {
 import { BUSINESS_DIRECTORY, type DirectoryGroup } from "@/lib/categories";
 import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
+import { useOverlay } from "@/hooks/use-overlay";
 
 const POPULAR_CHOICES = [
   "Cafe",
@@ -66,81 +67,26 @@ export function BusinessPickerModal({
     }
   }, [isOpen, selectedCategory]);
 
-  // Handle escape, focus trap, and bulletproof background scroll lock
-  React.useEffect(() => {
-    if (!isOpen) return;
-
-    const triggerEl = triggerRef?.current;
-    const scrollY = window.scrollY;
-    const prevPosition = document.body.style.position;
-    const prevTop = document.body.style.top;
-    const prevWidth = document.body.style.width;
-    const prevOverflow = document.body.style.overflow;
-
-    // Strict mobile scroll lock preventing background page jumping
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-    document.body.style.overflow = "hidden";
-
-    // Auto-focus input on desktop only; avoid jarring keyboard popup on mobile
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-    let timer: NodeJS.Timeout | null = null;
-    if (!isMobile) {
-      timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        if (stateRef.current.search) {
-          setSearch("");
-          return;
-        }
-        if (stateRef.current.selectedCategory) {
-          setSelectedCategory(null);
-          return;
-        }
-        handleClose();
-        return;
+  useOverlay({
+    isOpen,
+    onClose: handleClose,
+    containerRef: modalRef,
+    triggerRef,
+    initialFocusRef: inputRef,
+    preventMobileAutoFocus: true,
+    playCloseSound: false,
+    onEscape: () => {
+      if (stateRef.current.search) {
+        setSearch("");
+        return true;
       }
-
-      if (e.key === "Tab" && modalRef.current) {
-        const focusableEls = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        const firstEl = focusableEls[0];
-        const lastEl = focusableEls[focusableEls.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === firstEl) {
-            e.preventDefault();
-            lastEl?.focus();
-          }
-        } else {
-          if (document.activeElement === lastEl) {
-            e.preventDefault();
-            firstEl?.focus();
-          }
-        }
+      if (stateRef.current.selectedCategory) {
+        setSelectedCategory(null);
+        return true;
       }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      document.body.style.position = prevPosition;
-      document.body.style.top = prevTop;
-      document.body.style.width = prevWidth;
-      document.body.style.overflow = prevOverflow;
-      window.scrollTo(0, scrollY);
-      document.removeEventListener("keydown", handleKeyDown);
-      triggerEl?.focus();
-    };
-  }, [isOpen, handleClose, triggerRef]);
+      return false;
+    },
+  });
 
   const cleanSearch = search.trim().toLowerCase();
   const isSearching = cleanSearch.length > 0;

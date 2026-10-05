@@ -1,7 +1,6 @@
 import { getMapboxToken, isMapboxConfigured } from "@/lib/mapbox";
 import { isMockMode } from "@/lib/mode";
-import { AREA_PRESETS } from "@/lib/categories";
-import { KNOWN_PLACES } from "@/lib/search-parser";
+import { AREA_PRESETS, KNOWN_PLACES } from "@/lib/places";
 
 export interface GeocodingResult {
   id: string;

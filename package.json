@@ -18,14 +18,10 @@
     "start:vinext": "vinext start"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5",
     "@hugeicons/core-free-icons": "^1",
     "@hugeicons/react": "^1",
     "@paper-design/shaders": "^0.0.81",
     "@radix-ui/react-slot": "^1",
-    "@supabase/ssr": "^0.6",
-    "@supabase/supabase-js": "^2",
-    "@tanstack/react-query": "^5",
     "@turf/turf": "^7",
     "class-variance-authority": "^0.7",
     "clsx": "^2",
@@ -37,7 +33,6 @@
     "next-themes": "^0.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-hook-form": "^7",
     "react-map-gl": "^8",
     "recharts": "^3",
     "serpapi": "^2",
@@ -48,7 +43,6 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1",
     "@tailwindcss/postcss": "^4",
-    "@types/mapbox-gl": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

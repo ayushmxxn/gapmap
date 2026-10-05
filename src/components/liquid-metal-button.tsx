@@ -32,8 +32,7 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
     Array<{ x: number; y: number; id: number }>
   >([]);
   const shaderRef = React.useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const shaderMount = React.useRef<any>(null);
+  const shaderMount = React.useRef<InstanceType<typeof ShaderMount> | null>(null);
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const rippleId = React.useRef(0);
 
@@ -53,34 +52,6 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
   }, [label]);
 
   React.useEffect(() => {
-    const styleId = "shader-canvas-style-exploded";
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement("style");
-      style.id = styleId;
-      style.textContent = `
-        .shader-container-exploded canvas {
-          width: 100% !important;
-          height: 100% !important;
-          display: block !important;
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          border-radius: 100px !important;
-        }
-        @keyframes ripple-animation {
-          0% {
-            transform: translate(-50%, -50%) scale(0);
-            opacity: 0.6;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(4);
-            opacity: 0;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
     const prefersReducedMotion =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -88,8 +59,8 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
     const loadShader = async () => {
       try {
         if (shaderRef.current) {
-          if (shaderMount.current?.destroy) {
-            shaderMount.current.destroy();
+          if (shaderMount.current?.dispose) {
+            shaderMount.current.dispose();
           }
 
           shaderMount.current = new ShaderMount(
@@ -120,8 +91,8 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
     loadShader();
 
     return () => {
-      if (shaderMount.current?.destroy) {
-        shaderMount.current.destroy();
+      if (shaderMount.current?.dispose) {
+        shaderMount.current.dispose();
         shaderMount.current = null;
       }
     };

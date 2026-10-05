@@ -22,13 +22,13 @@ The codebase is organized by strict single-responsibility boundaries:
 | Domain | Primary Files / Folders | Responsibility |
 | :--- | :--- | :--- |
 | **1. UI Components** | `src/components/` | Presentation & user interaction components (Studio, Unified Search, Map, Evidence Sheet, Tables, Charts). |
-| **2. API Routes** | `src/app/api/scan/`<br>`src/app/api/health/` | Server endpoints orchestrating rate-limiting, validation, external queries, scoring, and response handling. |
-| **3. Business Logic** | `src/lib/scoring.ts`<br>`src/lib/geo.ts`<br>`src/lib/search-parser.ts`<br>`src/lib/location-scope.ts` | Pure deterministic domain calculations: distance metrics, query parsing, city-vs-neighborhood heuristics, and synthesis. |
-| **4. SerpApi Integration** | `src/lib/serpapi.ts` | Server-only client for Google Maps, Reviews, and Trends with strict timeout controls, schema validation, and secret sanitization. |
-| **5. Scoring** | `src/lib/scoring.ts` | Gap Signal v0 algorithm combining Trends demand (35%), review support (10%), supply saturation (25%), and quality gap (30%). |
-| **6. Validation** | `src/app/api/scan/route.ts`<br>`src/lib/scoring.ts`<br>`src/lib/serpapi.ts`<br>`src/lib/env.ts` | Strict runtime validation with Zod on client inputs, external API payloads, and environment variables. |
-| **7. Data Types** | `src/lib/scoring.ts`<br>`src/lib/serpapi.ts`<br>`src/lib/categories.ts`<br>`src/store/app.ts` | Strict TypeScript types derived directly from Zod schemas (`ScanResult`, `Competitor`, `MapsPlace`, `AppState`). |
-| **8. Shared Utilities** | `src/lib/scan-cache.ts`<br>`src/lib/scan-client.ts`<br>`src/lib/rate-limit.ts`<br>`src/lib/sound.ts`<br>`src/lib/utils.ts` | Multi-tier LRU caching, in-flight request coalescers, sliding-window rate limiting, UI audio synthesis, and styling helpers (`cn`). |
+| **2. API Routes** | `src/app/api/scan/`<br>`src/app/api/health/` | Thin HTTP controllers orchestrating rate-limiting, request validation, and status mapping. |
+| **3. Domain Services** | `src/lib/services/scan-pipeline.ts` | Complete scan orchestration, review target sampling, parallel data queries, and synthesis. |
+| **4. SerpApi Integration** | `src/lib/serpapi.ts` | Server-only client for Google Maps, Reviews, and Trends with strict timeout controls and secret sanitization. |
+| **5. Scoring Algorithm** | `src/lib/scoring.ts` | Pure Gap Signal v0 calculation functions (Trend demand, review support, supply saturation, quality gap). |
+| **6. Custom Hooks** | `src/hooks/` | Reusable UI behavior hooks (`use-overlay.ts` for accessibility, `use-place-autocomplete.ts` for geocoding). |
+| **7. Data Contracts & Types** | `src/types/scan.ts`<br>`src/lib/places.ts`<br>`src/store/app.ts` | Strict domain models and Zod schemas (`ScanResult`, `Competitor`, `KnownPlace`, `AppState`). |
+| **8. Shared Utilities** | `src/lib/scan-cache.ts`<br>`src/lib/scan-client.ts`<br>`src/lib/rate-limit.ts`<br>`src/lib/map-utils.ts`<br>`src/lib/sound.ts` | Multi-tier LRU caching, in-flight request coalescers, sliding-window rate limiting, and camera trigonometry. |
 | **9. Configuration** | `src/lib/env.ts`<br>`src/lib/mapbox.ts`<br>`src/lib/mode.ts` | Centralized typed environment schemas, Mapbox tokens, and the offline mock mode toggle. |
 
 ---
@@ -40,8 +40,8 @@ GapMap/
 ├── public/                 # Static assets (logo, og-image, favicon)
 ├── src/
 │   ├── app/                # Next.js App Router
-│   │   ├── api/            # Server Route Handlers (/api/scan, /api/health)
-│   │   ├── globals.css     # Tailwind v4 theme tokens & accessibility utilities
+│   │   ├── api/            # Thin Server Route Handlers (/api/scan, /api/health)
+│   │   ├── globals.css     # Tailwind v4 theme tokens, accessibility & shader styles
 │   │   ├── layout.tsx      # RootLayout with SEO metadata & JSON-LD structured data
 │   │   ├── manifest.ts     # Web App Manifest
 │   │   ├── page.tsx        # Application entry view
@@ -50,12 +50,13 @@ GapMap/
 │   ├── components/         # Interactive UI components
 │   │   ├── ui/             # Reusable UI primitives (Button)
 │   │   ├── business-picker-modal.tsx # Category selection dialog
+│   │   ├── competitor-marker.tsx     # Accessible Mapbox competitor marker
 │   │   ├── competitors-table.tsx     # Filterable competitor table
 │   │   ├── discovery-map.tsx         # Mapbox GL local & globe visualizer
 │   │   ├── evidence-sheet.tsx        # Slide-over evidence drawer
 │   │   ├── liquid-metal-button.tsx   # Metallic GPU shader action button
 │   │   ├── map-wrapper.tsx           # Dynamic client-boundary wrapper for map
-│   │   ├── providers.tsx             # Theme, sound, and React Query providers
+│   │   ├── providers.tsx             # Theme and sound providers
 │   │   ├── scan-studio.tsx           # Main workspace coordinating scan states
 │   │   ├── shortcut-pill.tsx         # Category filter pill
 │   │   ├── signal-hero.tsx           # Score summary card
@@ -63,29 +64,36 @@ GapMap/
 │   │   ├── theme-toggle.tsx          # Light/Dark mode switcher
 │   │   ├── themes-list.tsx           # Customer review themes list
 │   │   ├── trend-chart.tsx           # Recharts interest timeline
-│   │   └── unified-search.tsx        # Single natural-language search bar
+│   │   └── unified-search.tsx        # Natural-language search bar with autocomplete
+│   ├── hooks/              # Reusable UI hooks
+│   │   ├── use-overlay.ts            # Focus trap, scroll lock, and Escape dismissal
+│   │   └── use-place-autocomplete.ts # Debounced geocoding and suggestions hook
 │   ├── lib/                # Core domain, clients, & server services
-│   │   ├── categories.ts        # Category definitions & search term presets
+│   │   ├── services/
+│   │   │   └── scan-pipeline.ts # Complete scan orchestration & synthesis
+│   │   ├── categories.ts        # Business directory & category resolution
 │   │   ├── env.ts               # Zod-validated environment config
 │   │   ├── geo.ts               # Geospatial calculations (Turf)
 │   │   ├── location-scope.ts    # Scope detection (city vs neighborhood)
+│   │   ├── map-utils.ts         # Globe zoom trigonometry & rating colors
 │   │   ├── mapbox-geocoding.ts  # Mapbox forward & reverse geocoding
 │   │   ├── mapbox.ts            # Mapbox token & style constants
 │   │   ├── mock.ts              # Deterministic mock scan generator
 │   │   ├── mode.ts              # Mock-first mode switch
-│   │   ├── query-client.ts      # TanStack Query client configuration
+│   │   ├── places.ts            # Centralized Indian places, presets, and centroids
 │   │   ├── rate-limit.ts        # Zero-allocation sliding-window rate limiter
 │   │   ├── result-utils.ts      # Synthesis & formatting helpers
 │   │   ├── scan-cache.ts        # Multi-tier LRU cache & request coalescer
 │   │   ├── scan-client.ts       # Client API client with cache & timeout handling
-│   │   ├── scoring.ts           # Gap Signal v0 algorithm & Zod schemas
-│   │   ├── search-parser.ts     # Natural language query parser
+│   │   ├── scoring.ts           # Pure Gap Signal v0 calculation algorithms
+│   │   ├── search-parser.ts     # Natural language query tokenizer
 │   │   ├── serpapi.ts           # Server-only hardened SerpApi client
 │   │   ├── sound.ts             # Web Audio API sound synthesizers
-│   │   ├── supabase/            # Supabase browser & server clients
 │   │   └── utils.ts             # Styling utility (cn)
-│   └── store/              # Global state
-│       └── app.ts           # Zustand store for workspace UI state
+│   ├── store/              # Global state
+│   │   └── app.ts           # Zustand store for workspace UI state
+│   └── types/              # Domain data models & Zod schemas
+│       └── scan.ts          # ScanResult, Competitor, LedgerEntry, GapSignal types
 ├── AGENTS.md               # Agent guidelines and architectural constraints
 ├── package.json
 ├── tsconfig.json

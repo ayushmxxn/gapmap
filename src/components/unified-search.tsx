@@ -9,11 +9,9 @@ import {
 } from "@hugeicons/core-free-icons";
 import { ShortcutPill } from "@/components/shortcut-pill";
 import { resolveCategory } from "@/lib/categories";
-import {
-  findMatchingPreset,
-  parseSearchQuery,
-} from "@/lib/search-parser";
-import { searchPlaces, type GeocodingResult } from "@/lib/mapbox-geocoding";
+import { parseSearchQuery } from "@/lib/search-parser";
+import type { GeocodingResult } from "@/lib/mapbox-geocoding";
+import { usePlaceAutocomplete } from "@/hooks/use-place-autocomplete";
 import { BusinessPickerModal } from "@/components/business-picker-modal";
 import { LiquidMetalButton } from "@/components/liquid-metal-button";
 import { cn } from "@/lib/utils";
@@ -60,33 +58,7 @@ export function UnifiedSearch({
   }, [initialCategoryId, initialAreaLabel]);
 
   const [query, setQuery] = React.useState(defaultInitialQuery);
-  const [asyncArea, setAsyncArea] = React.useState<{
-    lat: number;
-    lng: number;
-    areaLabel: string;
-    scope?: "city" | "neighborhood";
-  } | null>(() => {
-    if (initialLat && initialLng && initialAreaLabel) {
-      return {
-        lat: initialLat,
-        lng: initialLng,
-        areaLabel: initialAreaLabel,
-      };
-    }
-    return null;
-  });
-
-  const [isResolving, setIsResolving] = React.useState(false);
-  const [asyncFailed, setAsyncFailed] = React.useState(false);
-  const [asyncError, setAsyncError] = React.useState(false);
   const [showValidation, setShowValidation] = React.useState(false);
-
-  // Location suggestions / ambiguous disambiguation
-  const [suggestions, setSuggestions] = React.useState<GeocodingResult[]>([]);
-  const [isAutocompleteOpen, setIsAutocompleteOpen] = React.useState(false);
-  const [activeSuggestionIndex, setActiveSuggestionIndex] = React.useState(-1);
-
-  // Centered "+ More" business picker modal state
   const [isMoreOpen, setIsMoreOpen] = React.useState(false);
 
   const containerRef = React.useRef<HTMLFormElement>(null);
@@ -102,96 +74,33 @@ export function UnifiedSearch({
     return resolveCategory(parsed.businessText);
   }, [parsed.businessText]);
 
-  // Check synchronous preset match (0ms latency)
-  const preset = React.useMemo(
-    () => findMatchingPreset(parsed.locationText),
-    [parsed.locationText],
-  );
-
-  // Derive final resolved location
-  const resolvedArea = preset
-    ? {
-        lat: preset.lat,
-        lng: preset.lng,
-        areaLabel: preset.label,
-        scope: preset.type,
-      }
-    : parsed.locationText.trim()
-      ? asyncArea
-      : null;
-
-  const resolutionFailed =
-    !preset && Boolean(parsed.locationText.trim()) && asyncFailed;
-  const resolutionError =
-    !preset && Boolean(parsed.locationText.trim()) && asyncError;
-
-  // Debounced location resolution & autocomplete suggestions for non-presets
-  React.useEffect(() => {
-    const locText = parsed.locationText.trim();
-
-    if (!locText || preset) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const timer = setTimeout(async () => {
-      setIsResolving(true);
-      setAsyncFailed(false);
-      setAsyncError(false);
-
-      try {
-        const places = await searchPlaces(locText);
-        if (!cancelled) {
-          if (places.length > 0) {
-            setSuggestions(places);
-            if (document.activeElement === inputRef.current) {
-              setIsAutocompleteOpen(true);
-            }
-            setAsyncArea({
-              lat: places[0].lat,
-              lng: places[0].lng,
-              areaLabel: places[0].fullAddress || places[0].name,
-              scope: places[0].scope,
-            });
-            setAsyncFailed(false);
-            setAsyncError(false);
-          } else {
-            setSuggestions([]);
-            setIsAutocompleteOpen(false);
-            setAsyncArea(null);
-            setAsyncFailed(true);
+  // Autocomplete and geocoding resolution hook
+  const {
+    resolvedArea,
+    setAsyncArea,
+    isResolving,
+    resolutionFailed,
+    resolutionError,
+    suggestions,
+    isAutocompleteOpen,
+    setIsAutocompleteOpen,
+    activeSuggestionIndex,
+    setActiveSuggestionIndex,
+    closeAutocomplete,
+    clearAutocomplete,
+  } = usePlaceAutocomplete({
+    locationText: parsed.locationText,
+    initialArea:
+      initialLat && initialLng && initialAreaLabel
+        ? {
+            lat: initialLat,
+            lng: initialLng,
+            areaLabel: initialAreaLabel,
           }
-          setIsResolving(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setSuggestions([]);
-          setIsAutocompleteOpen(false);
-          setAsyncArea(null);
-          setAsyncError(true);
-          setIsResolving(false);
-        }
-      }
-    }, 200);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [parsed.locationText, preset]);
-
-  // Close location autocomplete on click outside
-  React.useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (containerRef.current && !containerRef.current.contains(target)) {
-        setIsAutocompleteOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+        : null,
+    inputRef,
+    containerRef,
+  });
 
   const isReady =
     !isResolving && activeCategory !== null && resolvedArea !== null;
@@ -221,7 +130,7 @@ export function UnifiedSearch({
       return;
     }
 
-    setIsAutocompleteOpen(false);
+    closeAutocomplete();
     setIsMoreOpen(false);
     onSearch({
       lat: resolvedArea.lat,
@@ -240,9 +149,7 @@ export function UnifiedSearch({
       areaLabel: place.fullAddress,
       scope: place.scope,
     });
-    setAsyncFailed(false);
-    setAsyncError(false);
-    setIsAutocompleteOpen(false);
+    closeAutocomplete();
     setActiveSuggestionIndex(-1);
 
     const shortPlace = place.name || place.fullAddress.split(",")[0].trim();
@@ -254,22 +161,6 @@ export function UnifiedSearch({
 
     inputRef.current?.focus();
   };
-
-  React.useEffect(() => {
-    if (!isAutocompleteOpen) return;
-    const handleOutside = (e: PointerEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setIsAutocompleteOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", handleOutside);
-    return () => {
-      document.removeEventListener("pointerdown", handleOutside);
-    };
-  }, [isAutocompleteOpen]);
 
   // Keyboard navigation within the input & suggestions
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -361,13 +252,8 @@ export function UnifiedSearch({
   const handleClear = () => {
     setQuery("");
     setShowValidation(false);
-    setAsyncArea(null);
-    setSuggestions([]);
-    setIsAutocompleteOpen(false);
+    clearAutocomplete();
     setIsMoreOpen(false);
-    setIsResolving(false);
-    setAsyncFailed(false);
-    setAsyncError(false);
     inputRef.current?.focus();
   };
 

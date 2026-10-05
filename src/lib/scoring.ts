@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 /**
  * Gap Signal v0 — deterministic, no LLM.
  *
@@ -9,7 +7,17 @@ import { z } from "zod";
  * route), never inside scoring math.
  */
 
-export const SCORING_VERSION = "v0" as const;
+import {
+  type CompetitionInput,
+  type GapSignal,
+  type GapSignalInput,
+  type RatedPlace,
+  type TrendSignal,
+  type Verdict,
+} from "@/types/scan";
+
+// Re-export all domain contracts and schemas so existing consumers remain intact
+export * from "@/types/scan";
 
 export const SCORING_WEIGHTS = {
   trend: 0.35,
@@ -18,27 +26,11 @@ export const SCORING_WEIGHTS = {
   qualityGap: 0.3,
 } as const;
 
-export const VERDICTS = ["strong", "moderate", "weak"] as const;
-export type Verdict = (typeof VERDICTS)[number];
-
-export const VERDICT_LABEL: Record<Verdict, string> = {
-  strong: "Strong signal",
-  moderate: "Moderate signal",
-  weak: "Weak signal",
-};
-
 function clamp(n: number, min = 0, max = 100): number {
   return Math.min(max, Math.max(min, n));
 }
 
 /* ---------------- Trend demand signal (primary) ---------------- */
-
-export interface TrendSignal {
-  score: number;
-  avgLevel: number;
-  slopeScore: number;
-  points: number;
-}
 
 /** Least-squares slope per timeline step, mapped to 0–100 around 50. */
 export function slopeToScore(values: number[]): number {
@@ -77,12 +69,6 @@ export function computeReviewSupport(totalReviews: number): number {
 
 /* ---------------- Competition (inverted: higher = more saturated) ---------------- */
 
-export interface CompetitionInput {
-  count: number;
-  densityPerKm2: number;
-  medianNearestKm: number;
-}
-
 export function computeCompetition(input: CompetitionInput): number {
   const countScore = clamp((input.count / 20) * 100);
   const densityScore = clamp((input.densityPerKm2 / 8) * 100);
@@ -93,11 +79,6 @@ export function computeCompetition(input: CompetitionInput): number {
 }
 
 /* ---------------- Quality gap ---------------- */
-
-export interface RatedPlace {
-  rating: number;
-  reviews: number;
-}
 
 export function computeQualityGap(
   places: RatedPlace[],
@@ -116,20 +97,6 @@ export function computeQualityGap(
 }
 
 /* ---------------- Gap Signal ---------------- */
-
-export interface GapSignalInput {
-  trend: TrendSignal | null;
-  reviewSupport: number;
-  competition: number;
-  qualityGap: number;
-}
-
-export interface GapSignal {
-  score: number;
-  verdict: Verdict;
-  /** True when Trends data was missing and weights were redistributed. */
-  renormalized: boolean;
-}
 
 export function verdictFor(score: number): Verdict {
   if (score >= 75) return "strong";
@@ -158,98 +125,3 @@ export function computeGapSignal(input: GapSignalInput): GapSignal {
   );
   return { score, verdict: verdictFor(score), renormalized: false };
 }
-
-/* ---------------- Scan result shape ---------------- */
-
-export const ledgerEntrySchema = z.object({
-  id: z.string(),
-  engine: z.enum(["google_maps", "google_maps_reviews", "google_trends"]),
-  summary: z.string(),
-  resultCount: z.number(),
-});
-export type LedgerEntry = z.infer<typeof ledgerEntrySchema>;
-
-export const competitorSchema = z.object({
-  title: z.string(),
-  rating: z.number().optional(),
-  reviews: z.number().optional(),
-  address: z.string().optional(),
-  lat: z.number().optional(),
-  lng: z.number().optional(),
-  placeType: z.string().optional(),
-  selection: z.enum(["anchor", "weak-incumbent", "median"]).optional(),
-  evidence: z.string(),
-});
-export type Competitor = z.infer<typeof competitorSchema>;
-
-export const themeSchema = z.object({
-  keyword: z.string(),
-  mentions: z.number(),
-  sourcePlace: z.string(),
-  evidence: z.string(),
-});
-export type PlaceTheme = z.infer<typeof themeSchema>;
-
-export const trendPointSchema = z.object({
-  date: z.string(),
-  value: z.number(),
-});
-
-export const trendSchema = z.object({
-  scopeLabel: z.string(),
-  avgLevel: z.number(),
-  slopeScore: z.number(),
-  score: z.number(),
-  points: z.array(trendPointSchema),
-  evidence: z.string(),
-});
-
-export const insightSchema = z.object({
-  text: z.string(),
-  evidence: z.array(z.string()),
-});
-export type Insight = z.infer<typeof insightSchema>;
-
-export const scanScopeSchema = z.object({
-  type: z.enum(["city", "neighborhood"]),
-  label: z.string(),
-  radiusKm: z.number().optional(),
-  cityName: z.string().optional(),
-});
-export type ScanScope = z.infer<typeof scanScopeSchema>;
-
-export const scanResultSchema = z.object({
-  mode: z.enum(["mock", "live"]),
-  version: z.literal(SCORING_VERSION),
-  area: z.object({
-    label: z.string(),
-    lat: z.number(),
-    lng: z.number(),
-    scope: z.enum(["city", "neighborhood"]).optional(),
-  }),
-  scope: scanScopeSchema.optional(),
-  category: z.object({ id: z.string(), label: z.string() }),
-  gapSignal: z.object({
-    score: z.number(),
-    verdict: z.enum(VERDICTS),
-    renormalized: z.boolean(),
-  }),
-  components: z.object({
-    trend: z.number().nullable(),
-    reviewSupport: z.number(),
-    competition: z.number(),
-    qualityGap: z.number(),
-  }),
-  stats: z.object({
-    places: z.number(),
-    totalReviews: z.number(),
-    reviewsExamined: z.number(),
-  }),
-  competitors: z.array(competitorSchema),
-  themes: z.array(themeSchema),
-  themesWithheld: z.boolean(),
-  trend: trendSchema.nullable(),
-  insights: z.array(insightSchema),
-  ledger: z.array(ledgerEntrySchema),
-});
-export type ScanResult = z.infer<typeof scanResultSchema>;

@@ -1,4 +1,4 @@
-import { KNOWN_PLACES } from "@/lib/search-parser";
+import { KNOWN_PLACES, INDIAN_STATES_AND_UTS } from "@/lib/places";
 
 export type ScanScopeType = "city" | "neighborhood";
 
@@ -8,44 +8,6 @@ export interface ResolvedScope {
   cityName: string;
   neighborhoodName?: string;
 }
-
-const INDIAN_STATES_AND_UTS = new Set([
-  "andhra pradesh",
-  "arunachal pradesh",
-  "assam",
-  "bihar",
-  "chhattisgarh",
-  "goa",
-  "gujarat",
-  "haryana",
-  "himachal pradesh",
-  "jharkhand",
-  "karnataka",
-  "kerala",
-  "madhya pradesh",
-  "maharashtra",
-  "manipur",
-  "meghalaya",
-  "mizoram",
-  "nagaland",
-  "odisha",
-  "punjab",
-  "rajasthan",
-  "sikkim",
-  "tamil nadu",
-  "telangana",
-  "tripura",
-  "uttar pradesh",
-  "uttarakhand",
-  "west bengal",
-  "delhi",
-  "delhi, ncr",
-  "ncr",
-  "chandigarh",
-  "puducherry",
-  "jammu and kashmir",
-  "ladakh",
-]);
 
 /**
  * Resolves an area label to either a city-wide scope or a neighborhood/local scope.

@@ -7,7 +7,6 @@ import { SCORING_WEIGHTS, type ScanResult } from "@/lib/scoring";
 import { CompetitorsTable } from "@/components/competitors-table";
 import { ThemesList } from "@/components/themes-list";
 import { TrendChart } from "@/components/trend-chart";
-import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
 function formatEngineName(engine: string): string {
@@ -23,6 +22,8 @@ function formatEngineName(engine: string): string {
   }
 }
 
+import { useOverlay } from "@/hooks/use-overlay";
+
 export function EvidenceSheet({
   open,
   onClose,
@@ -36,61 +37,13 @@ export function EvidenceSheet({
 }) {
   const closeRef = React.useRef<HTMLButtonElement>(null);
   const asideRef = React.useRef<HTMLElement>(null);
-  const triggerElRef = React.useRef<HTMLElement | null>(null);
 
-  React.useEffect(() => {
-    if (!open) return;
-
-    triggerElRef.current = document.activeElement as HTMLElement | null;
-
-    const timer = setTimeout(() => {
-      closeRef.current?.focus();
-    }, 50);
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        playSound("close");
-        onClose();
-        return;
-      }
-
-      if (e.key === "Tab" && asideRef.current) {
-        const focusableEls = asideRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusableEls.length === 0) return;
-        const firstEl = focusableEls[0];
-        const lastEl = focusableEls[focusableEls.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === firstEl) {
-            e.preventDefault();
-            lastEl?.focus();
-          }
-        } else {
-          if (document.activeElement === lastEl) {
-            e.preventDefault();
-            firstEl?.focus();
-          }
-        }
-      }
-    };
-
-    document.addEventListener("keydown", onKey);
-    const prevBody = document.body.style.overflow;
-    const prevHtml = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevBody;
-      document.documentElement.style.overflow = prevHtml;
-      triggerElRef.current?.focus();
-    };
-  }, [open, onClose]);
+  useOverlay({
+    isOpen: open,
+    onClose,
+    containerRef: asideRef,
+    initialFocusRef: closeRef,
+  });
 
   const isCityScope = result.scope?.type === "city" || result.area.scope === "city";
   const locationName =

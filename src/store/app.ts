@@ -4,8 +4,6 @@ import type { ScanResult } from "@/lib/scoring";
 export type ScanStatus = "idle" | "loading" | "success" | "error";
 
 interface AppState {
-  useMock: boolean;
-  setUseMock: (v: boolean) => void;
   lat: number;
   lng: number;
   areaLabel: string;
@@ -21,8 +19,6 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>()((set) => ({
-  useMock: true,
-  setUseMock: (v) => set({ useMock: v }),
   lat: 12.9352,
   lng: 77.6245,
   areaLabel: "",

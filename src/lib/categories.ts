@@ -252,17 +252,4 @@ export function resolveCategory(idOrQuery: string): Category {
   };
 }
 
-/** Preset Indian demo areas. Coordinates are public neighbourhood centroids. */
-export interface AreaPreset {
-  id: string;
-  label: string;
-  lat: number;
-  lng: number;
-}
-
-export const AREA_PRESETS: AreaPreset[] = [
-  { id: "koramangala", label: "Koramangala, Bengaluru", lat: 12.9352, lng: 77.6245 },
-  { id: "indiranagar", label: "Indiranagar, Bengaluru", lat: 12.9784, lng: 77.6408 },
-  { id: "bandra-west", label: "Bandra West, Mumbai", lat: 19.0596, lng: 72.8295 },
-  { id: "hauz-khas", label: "Hauz Khas, New Delhi", lat: 28.5494, lng: 77.2001 },
-];
+export { AREA_PRESETS, type AreaPreset } from "@/lib/places";
