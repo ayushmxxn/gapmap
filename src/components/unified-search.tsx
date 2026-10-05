@@ -439,6 +439,7 @@ export function UnifiedSearch({
               ? `location-option-${activeSuggestionIndex}`
               : undefined
           }
+          data-cuelume-type
           className={cn(
             "h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#191b19] pl-10 pr-10 text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f3f4f3] placeholder:text-[#18181b]/45 dark:placeholder:text-[#949a94]/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_2px_4px_0_rgba(0,0,0,0.4)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1d201d] hover:border-black/[0.09] dark:hover:border-white/[0.13] focus-visible:outline-none focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#212421] focus-visible:border-black/[0.1] dark:focus-visible:border-white/[0.18] focus-visible:ring-2 focus-visible:ring-[#3B82F6]/25 dark:focus-visible:ring-[#3B82F6]/30 focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.4)]",
             showValidation && !isReady && "border-amber-500/50 ring-2 ring-amber-500/25 dark:border-amber-400/50 dark:ring-amber-400/25",
@@ -528,6 +529,7 @@ export function UnifiedSearch({
           return (
             <ShortcutPill
               key={pick.id}
+              data-cuelume-select
               selected={isSelected}
               onClick={() => handleSelectBusiness(pick.label)}
             >
@@ -539,6 +541,7 @@ export function UnifiedSearch({
         {/* "+ More" Progressive Disclosure Pill */}
         <ShortcutPill
           ref={moreButtonRef}
+          data-cuelume-open
           selected={isMoreActive}
           onClick={toggleMorePicker}
           aria-expanded={isMoreOpen}

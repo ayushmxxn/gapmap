@@ -23,6 +23,7 @@ export function ThemeToggle() {
     <button
       type="button"
       role="switch"
+      data-cuelume-toggle
       aria-checked={isDark}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}

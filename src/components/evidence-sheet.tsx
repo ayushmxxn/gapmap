@@ -7,6 +7,7 @@ import { SCORING_WEIGHTS, type ScanResult } from "@/lib/scoring";
 import { CompetitorsTable } from "@/components/competitors-table";
 import { ThemesList } from "@/components/themes-list";
 import { TrendChart } from "@/components/trend-chart";
+import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
 function formatEngineName(engine: string): string {
@@ -39,7 +40,10 @@ export function EvidenceSheet({
     if (!open) return;
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        playSound("close");
+        onClose();
+      }
     };
     document.addEventListener("keydown", onKey);
     const prevBody = document.body.style.overflow;
@@ -65,6 +69,7 @@ export function EvidenceSheet({
       aria-hidden={!open}
     >
       <div
+        data-cuelume-close
         onClick={onClose}
         className={cn(
           "absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-200 ease-out touch-none",
@@ -94,6 +99,7 @@ export function EvidenceSheet({
           <button
             ref={closeRef}
             type="button"
+            data-cuelume-close
             onClick={onClose}
             aria-label="Close evidence panel"
             className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 cursor-pointer shrink-0 mt-0.5"
@@ -150,7 +156,7 @@ export function EvidenceSheet({
 
           {/* 4. How the score was calculated (Collapsed by default) */}
           <section className="border-t border-border/40 pt-6">
-            <details className="group rounded-xl border border-border/60 bg-card p-4 shadow-2xs transition-all hover:border-border">
+            <details className="group rounded-xl bg-[#f2f2f2] dark:bg-muted/50 p-4 transition-all">
               <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
                 <span className="text-xs font-semibold">How we scored it</span>
                 <HugeiconsIcon
@@ -166,28 +172,28 @@ export function EvidenceSheet({
                 </p>
 
                 <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 pt-1">
-                  <div className="rounded-lg border border-border/50 bg-muted/20 p-3">
+                  <div className="rounded-lg border border-border/50 bg-card p-3">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground">Trend demand</span>
                       <span className="text-[11px] font-semibold text-foreground">{(SCORING_WEIGHTS.trend * 100).toFixed(0)}%</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1">12-month online search interest velocity.</p>
                   </div>
-                  <div className="rounded-lg border border-border/50 bg-muted/20 p-3">
+                  <div className="rounded-lg border border-border/50 bg-card p-3">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground">Market saturation</span>
                       <span className="text-[11px] font-semibold text-foreground">{(SCORING_WEIGHTS.competition * 100).toFixed(0)}%</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1">Competitor density across the local trade area.</p>
                   </div>
-                  <div className="rounded-lg border border-border/50 bg-muted/20 p-3">
+                  <div className="rounded-lg border border-border/50 bg-card p-3">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground">Quality gap</span>
                       <span className="text-[11px] font-semibold text-foreground">{(SCORING_WEIGHTS.qualityGap * 100).toFixed(0)}%</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1">Unmet customer satisfaction and low competitor ratings.</p>
                   </div>
-                  <div className="rounded-lg border border-border/50 bg-muted/20 p-3">
+                  <div className="rounded-lg border border-border/50 bg-card p-3">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground">Review volume support</span>
                       <span className="text-[11px] font-semibold text-foreground">{(SCORING_WEIGHTS.reviewSupport * 100).toFixed(0)}%</span>
@@ -206,8 +212,8 @@ export function EvidenceSheet({
           </section>
 
           {/* 5. Technical details (Collapsed by default) */}
-          <section className="border-t border-border/40 pt-4">
-            <details className="group rounded-xl border border-border/60 bg-card p-4 shadow-2xs transition-all hover:border-border">
+          <section className="pt-3">
+            <details className="group rounded-xl bg-[#f2f2f2] dark:bg-muted/50 p-4 transition-all">
               <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
                 <span className="text-xs font-semibold">Technical details</span>
                 <HugeiconsIcon
@@ -219,7 +225,7 @@ export function EvidenceSheet({
               </summary>
               <div className="mt-3.5 space-y-4 border-t border-border/40 pt-3.5 text-xs text-muted-foreground leading-relaxed">
                 {/* Source & Execution parameters */}
-                <div className="rounded-lg border border-border/50 bg-muted/20 p-3 space-y-1.5 text-xs">
+                <div className="rounded-lg border border-border/50 bg-card p-3 space-y-1.5 text-xs">
                   <div className="flex justify-between py-0.5 border-b border-border/30">
                     <span className="text-muted-foreground">Data provider</span>
                     <span className="font-medium text-foreground">SerpApi (Maps, Reviews, Trends)</span>

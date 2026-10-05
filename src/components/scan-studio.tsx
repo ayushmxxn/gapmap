@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { UnifiedSearch } from "@/components/unified-search";
 import { AREA_PRESETS, resolveCategory } from "@/lib/categories";
 import { postScan, scanUrl } from "@/lib/scan-client";
+import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app";
 import Image from "next/image";
@@ -79,6 +80,7 @@ export function ScanStudio() {
       setStatus("loading");
       setError(null);
       setResult(null);
+      playSound("loading", { volume: 0.3 });
       window.history.replaceState(
         null,
         "",
@@ -99,10 +101,12 @@ export function ScanStudio() {
         (data) => {
           setResult(data);
           setStatus("success");
+          playSound("success", { emphasis: "strong", volume: 0.85 });
         },
         (err) => {
           setStatus("error");
           setError(err instanceof Error ? err.message : "Scan failed.");
+          playSound("error", { volume: 0.5 });
         },
       );
     },
@@ -124,6 +128,7 @@ export function ScanStudio() {
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
+                data-cuelume-navigate
                 onClick={() => {
                   setStatus("idle");
                   setResult(null);
@@ -163,6 +168,7 @@ export function ScanStudio() {
             <div className="flex items-center shrink-0">
               <Button
                 type="button"
+                data-cuelume-tap
                 variant="ghost"
                 size="sm"
                 onClick={() => {

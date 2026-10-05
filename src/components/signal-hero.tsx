@@ -122,6 +122,7 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
 
         <Button
           type="button"
+          data-cuelume-open
           onClick={onOpenEvidence}
           variant="ghost"
           size="sm"

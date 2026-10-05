@@ -327,6 +327,7 @@ export function LiquidMetalButton({
           <button
             ref={buttonRef}
             type={type}
+            data-cuelume-tap
             disabled={disabled}
             onClick={handleClick}
             onMouseEnter={handleMouseEnter}

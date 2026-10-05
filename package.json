@@ -29,6 +29,7 @@
     "@turf/turf": "^7",
     "class-variance-authority": "^0.7",
     "clsx": "^2",
+    "cuelume": "^0.2.4",
     "geist": "^1",
     "mapbox-gl": "^3",
     "motion": "^12",

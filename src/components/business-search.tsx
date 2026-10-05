@@ -279,6 +279,7 @@ export function BusinessSearch({
           ref={inputRef}
           id="business-search-input"
           type="text"
+          data-cuelume-type
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={isOpen}
@@ -380,6 +381,7 @@ export function BusinessSearch({
               <li
                 id="business-option-custom-search-option"
                 role="option"
+                data-cuelume-select
                 aria-selected={activeIndex === 0}
                 data-combobox-index={0}
                 onMouseEnter={() => setActiveIndex(0)}
@@ -415,6 +417,7 @@ export function BusinessSearch({
                   key={c.id}
                   id={`business-option-${c.id}`}
                   role="option"
+                  data-cuelume-select
                   aria-selected={isSelected}
                   data-combobox-index={itemIndex}
                   onMouseEnter={() => setActiveIndex(itemIndex)}
@@ -456,6 +459,7 @@ export function BusinessSearch({
             return (
               <ShortcutPill
                 key={b.id}
+                data-cuelume-select
                 selected={isSelected}
                 onClick={() => handleSelect(b.id)}
               >

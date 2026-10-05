@@ -41,6 +41,9 @@ importers:
       clsx:
         specifier: ^2
         version: 2.1.1
+      cuelume:
+        specifier: ^0.2.4
+        version: 0.2.4
       geist:
         specifier: ^1
         version: 1.7.2(next@16.3.6(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))
@@ -2090,6 +2093,9 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  cuelume@0.2.4:
+    resolution: {integrity: sha512-w5Kj1h/MC8chBlwgfIdo/stB73m0RDa2KcIO93yI0mSq5qP6ERKOKTzv2JTj1KD9YUct4vZLAatohdeAe/mZJw==}
 
   d3-array@2.12.1:
     resolution: {integrity: sha512-B0ErZK/66mHtEsR1TkPEEkwdy+WDesimkM5gpZr5Dsg54BiTA5RXtYW5qTLIAcekaS9xfZrzBLF/OAkB3Qn1YQ==}
@@ -6468,6 +6474,8 @@ snapshots:
       postcss-value-parser: 4.2.0
 
   csstype@3.2.3: {}
+
+  cuelume@0.2.4: {}
 
   d3-array@2.12.1:
     dependencies:

@@ -7,6 +7,7 @@ import {
   Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { BUSINESS_DIRECTORY } from "@/lib/categories";
+import { playSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
 const POPULAR_CHOICES = [
@@ -44,6 +45,7 @@ export function BusinessPickerModal({
   const modalRef = React.useRef<HTMLDivElement>(null);
 
   const handleClose = React.useCallback(() => {
+    playSound("close");
     setSearch("");
     onClose();
   }, [onClose]);
@@ -161,6 +163,7 @@ export function BusinessPickerModal({
   );
 
   const handleSelect = (label: string) => {
+    playSound("select");
     onSelectBusiness(label.trim());
     onClose();
   };
@@ -187,6 +190,7 @@ export function BusinessPickerModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
+      data-cuelume-close
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-150 touch-none pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -218,6 +222,7 @@ export function BusinessPickerModal({
           </div>
           <button
             type="button"
+            data-cuelume-close
             aria-label="Close dialog"
             onClick={handleClose}
             className="flex size-8 items-center justify-center rounded-full text-muted-foreground/60 hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer active:scale-95"
@@ -237,6 +242,7 @@ export function BusinessPickerModal({
           <input
             ref={inputRef}
             type="text"
+            data-cuelume-type
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -265,6 +271,7 @@ export function BusinessPickerModal({
           <div className="mt-3">
             <button
               type="button"
+              data-cuelume-select
               onClick={() => handleSelect(search.trim())}
               className="w-full flex items-center justify-between rounded-xl border border-primary/20 bg-primary/8 px-4 py-2.5 text-left text-xs sm:text-sm text-foreground hover:bg-primary/12 transition-all cursor-pointer group"
             >
@@ -305,6 +312,7 @@ export function BusinessPickerModal({
                       <button
                         key={item.id}
                         type="button"
+                        data-cuelume-select
                         onClick={() => handleSelect(item.label)}
                         className={cn(
                           "rounded-[9px] px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none active:translate-y-px outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
@@ -345,6 +353,7 @@ export function BusinessPickerModal({
                       <button
                         key={choice}
                         type="button"
+                        data-cuelume-select
                         onClick={() => handleSelect(choice)}
                         className={cn(
                           "rounded-[9px] px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none active:translate-y-px outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
@@ -380,6 +389,7 @@ export function BusinessPickerModal({
                           <button
                             key={item.id}
                             type="button"
+                            data-cuelume-select
                             onClick={() => handleSelect(item.label)}
                             className={cn(
                               "rounded-[8px] px-2.5 py-1 text-xs font-medium transition-all duration-150 cursor-pointer select-none active:translate-y-px outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
