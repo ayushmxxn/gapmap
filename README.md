@@ -37,17 +37,26 @@ pnpm dev
 Open **[http://localhost:3000](http://localhost:3000)** in your browser. All interactive maps, category searches, evidence sheets, and analytical ledgers will work out of the box using deterministic offline datasets.
 
 ### Running in Live Mode
-To run against live Google Maps and Google Trends data:
+To run against live Google Maps, Google Reviews, and Google Trends data:
 1. Copy `.env.example` to `.env.local`:
    ```bash
    cp .env.example .env.local
    ```
-2. Configure your keys:
+2. Configure your environment variables in `.env.local`:
    ```env
-   NEXT_PUBLIC_USE_MOCK=false
+   # Server-Only Secret (Never exposed to client bundles)
    SERPAPI_KEY=your_serpapi_key_here
+
+   # Intentionally Public Client Configuration (Bundled to browser)
+   NEXT_PUBLIC_USE_MOCK=false
    NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_public_token_here
    ```
+
+   **Environment Variable Architecture & Boundaries:**
+   - **`SERPAPI_KEY` (Server Secret)**: Private API key used exclusively within server route handlers (`/api/scan`) to ingest Google Maps supply data, customer reviews, and Google Trends timelines. It is strictly server-only, never prefixed with `NEXT_PUBLIC_`, and never exposed to client bundles or error outputs.
+   - **`NEXT_PUBLIC_MAPBOX_TOKEN` (Client Public Token)**: Public Mapbox token (`pk.*`) required by Mapbox GL JS running directly inside the browser canvas to render vector map layers and perform client-side geocoding.
+   - **`NEXT_PUBLIC_USE_MOCK` (Client Configuration Flag)**: Set to `false` to enable live network operations across both the browser (live Mapbox geocoding) and the server (SerpApi pipeline). It is intentionally client-accessible so browser search hooks can bypass external requests when in offline mock mode without requiring an extra server round-trip.
+   - **`NEXT_PUBLIC_APP_URL` (Optional Public URL)**: Canonical base URL (e.g. `https://gapmap.app`) used for OpenGraph preview tags, XML sitemaps, and metadata. On Vercel deployments, this automatically falls back to `VERCEL_PROJECT_PRODUCTION_URL` if omitted.
 3. Restart `pnpm dev`.
 
 ---

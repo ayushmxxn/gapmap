@@ -166,6 +166,7 @@ export async function executeScanPipeline(
     lng,
     categoryId: category.id,
     scope: scopeType,
+    cityName: isCity ? cityName : undefined,
   });
 
   const cachedResult = getCachedScan(scanKey);

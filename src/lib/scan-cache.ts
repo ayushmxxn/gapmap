@@ -31,8 +31,17 @@ export function getScanCacheKey(input: {
   lng: number;
   categoryId: string;
   scope: string;
+  cityName?: string;
 }): string {
-  return `${input.scope}:${input.categoryId.toLowerCase().trim()}:${input.lat.toFixed(4)}:${input.lng.toFixed(4)}`;
+  const cat = input.categoryId.toLowerCase().trim();
+  if (
+    input.scope === "city" &&
+    input.cityName &&
+    input.cityName.trim().length > 0
+  ) {
+    return `city:${cat}:${input.cityName.toLowerCase().trim()}`;
+  }
+  return `${input.scope}:${cat}:${input.lat.toFixed(4)}:${input.lng.toFixed(4)}`;
 }
 
 export function getCachedScan(key: string): ScanResult | null {

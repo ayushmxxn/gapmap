@@ -1,10 +1,28 @@
 import { z } from "zod";
 
+/**
+ * GapMap Environment Variable Architecture
+ *
+ * 1. Server-Only Secrets:
+ *    - SERPAPI_KEY: Private API key for Google Maps, Reviews, and Trends ingestion.
+ *      Must NEVER be prefixed with NEXT_PUBLIC_ and must never reach the browser bundle.
+ *    - VERCEL_PROJECT_PRODUCTION_URL: Injected automatically by Vercel for preview/production.
+ *
+ * 2. Intentionally Public Client Configuration:
+ *    - NEXT_PUBLIC_MAPBOX_TOKEN: Public access token required by Mapbox GL JS running
+ *      in the browser for vector map rendering and client-side geocoding.
+ *    - NEXT_PUBLIC_USE_MOCK: Client-visible runtime/build flag (default: true). Must remain
+ *      public so browser search hooks & map interactions can bypass external Mapbox API
+ *      calls when running offline in zero-key mock mode without network round-trips.
+ *    - NEXT_PUBLIC_APP_URL: Public canonical URL for OpenGraph, sitemap, and metadata generation.
+ */
+
 const clientSchema = z.object({
   NEXT_PUBLIC_USE_MOCK: z
     .enum(["true", "false"])
+    .or(z.literal(""))
     .default("true")
-    .transform((v) => v === "true"),
+    .transform((v) => v !== "false"),
   NEXT_PUBLIC_MAPBOX_TOKEN: z.string().optional().default(""),
   NEXT_PUBLIC_APP_URL: z.string().url().optional().or(z.literal("")),
 });

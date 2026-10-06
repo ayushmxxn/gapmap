@@ -4,10 +4,73 @@ import { SerpApiError, logSafeError } from "@/lib/serpapi";
 import { checkRateLimit, extractClientIp } from "@/lib/rate-limit";
 import { executeScanPipeline } from "@/lib/services/scan-pipeline";
 import { scanRequestSchema } from "@/types/scan";
+import { siteUrl } from "@/lib/env";
+
+/**
+ * Validates request origin to protect against unauthorized cross-site requests
+ * and blind POST credit-draining attacks.
+ */
+function isAllowedOrigin(req: Request): boolean {
+  // Reject explicit cross-site browser requests
+  const secFetchSite = req.headers.get("sec-fetch-site");
+  if (secFetchSite === "cross-site") {
+    return false;
+  }
+
+  const origin = req.headers.get("origin");
+  if (origin) {
+    try {
+      const originHost = new URL(origin).host.toLowerCase();
+      const reqHost = (
+        req.headers.get("x-forwarded-host") ||
+        req.headers.get("host") ||
+        ""
+      ).toLowerCase();
+
+      let siteHost = "";
+      try {
+        siteHost = new URL(siteUrl).host.toLowerCase();
+      } catch {
+        // siteUrl fallback
+      }
+
+      if (originHost !== reqHost && originHost !== siteHost) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 export async function POST(req: Request) {
   try {
-    // 1. IP Rate Limiting with safe proxy detection
+    // 1. Enforce JSON Content-Type (prevents simple cross-origin blind POST attacks)
+    const contentType = req.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().includes("application/json")) {
+      return NextResponse.json(
+        {
+          error: "Invalid Content-Type. Requests must specify application/json.",
+          code: "UNSUPPORTED_MEDIA_TYPE",
+        },
+        { status: 415 },
+      );
+    }
+
+    // 2. Reject unauthorized cross-site requests
+    if (!isAllowedOrigin(req)) {
+      return NextResponse.json(
+        {
+          error: "Cross-origin requests to the scan API are forbidden.",
+          code: "FORBIDDEN",
+        },
+        { status: 403 },
+      );
+    }
+
+    // 3. IP Rate Limiting with safe proxy detection
     const ip = extractClientIp(req);
     const rateLimit = checkRateLimit(ip);
     if (rateLimit.limited) {
