@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="./public/logo.png" alt="GapMap Logo" width="80" />
-</p>
+<img src="./public/logo.png" alt="GapMap Logo" width="80" />
 
 # GapMap
 
