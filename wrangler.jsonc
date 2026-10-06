@@ -10,5 +10,10 @@
     "directory": "dist/client",
     "not_found_handling": "none",
     "binding": "ASSETS"
+  },
+  "vars": {
+    "NEXT_PUBLIC_USE_MOCK": "false",
+    "NEXT_PUBLIC_MAPBOX_TOKEN": "pk.eyJ1IjoiYXl1c2hteHhuIiwiYSI6ImNtdWgwNzh1YTBxcG4yeHJ6c2tvN2FzMGUifQ.jp_Z7ZCQw2KrhFRuX_IYxQ",
+    "NEXT_PUBLIC_APP_URL": "https://gapmap.marbled-board.workers.dev"
   }
 }
