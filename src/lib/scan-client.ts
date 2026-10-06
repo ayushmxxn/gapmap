@@ -28,13 +28,16 @@ interface ClientCacheEntry {
   expiresAt: number;
 }
 
-const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
+// Cache completed scans in memory so switching views doesn't re-fetch.
+const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000;
 const MAX_CLIENT_CACHE_ENTRIES = 50;
 
 const clientScanCache = new Map<string, ClientCacheEntry>();
+// Coalesce rapid duplicate clicks on the client before they hit the network.
 const clientInFlightScans = new Map<string, Promise<ScanResult>>();
 
 function getClientScanKey(input: ScanInput): string {
+  // Round coordinates so slightly shifted map clicks reuse the same scan.
   return `${input.scope ?? "neighborhood"}:${input.categoryId.toLowerCase().trim()}:${input.lat.toFixed(4)}:${input.lng.toFixed(4)}`;
 }
 

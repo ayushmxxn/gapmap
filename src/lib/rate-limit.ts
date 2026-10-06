@@ -1,12 +1,5 @@
-/**
- * Production-grade in-memory sliding-window rate limiter.
- * Safe for Cloudflare Workers (vinext) and Node.js runtimes.
- *
- * Scalability guarantees:
- * - Zero array allocations per request (O(1) memory per IP).
- * - Hard cap on store size with deterministic LRU eviction.
- * - Sliding window calculation prevents burst-traffic spikes at window borders.
- */
+// Sliding-window rate limiter that works across Node.js and Cloudflare Workers (vinext).
+
 
 interface RateLimitRecord {
   currentCount: number;
@@ -35,12 +28,8 @@ export interface RateLimitResult {
   resetSeconds: number;
 }
 
-/**
- * Checks and records an access attempt for the given IP address using
- * an efficient, zero-allocation sliding-window counter.
- */
 export function checkRateLimit(ip: string): RateLimitResult {
-  // Never rate-limit local development
+  // Bypass in development so local work and tests aren't blocked.
   if (process.env.NODE_ENV !== "production") {
     return { limited: false, remaining: MAX_HITS, resetSeconds: 0 };
   }
@@ -65,7 +54,6 @@ export function checkRateLimit(ip: string): RateLimitResult {
     rateLimitStore.set(ip, record);
   }
 
-  // Handle window advancement
   const elapsed = now - record.windowStart;
   if (elapsed >= 2 * WINDOW_MS) {
     record.previousCount = 0;
@@ -77,7 +65,6 @@ export function checkRateLimit(ip: string): RateLimitResult {
     record.windowStart += WINDOW_MS;
   }
 
-  // Sliding window estimate
   const windowProgress = Math.min(
     1,
     Math.max(0, (now - record.windowStart) / WINDOW_MS),
@@ -111,9 +98,6 @@ export function checkRateLimit(ip: string): RateLimitResult {
   };
 }
 
-/**
- * Validates whether a string has a valid IPv4 or IPv6 format.
- */
 export function isValidIp(ip: string): boolean {
   if (!ip || ip.length > 45) return false;
   const trimmed = ip.trim();
@@ -137,32 +121,19 @@ export function isValidIp(ip: string): boolean {
   return trimmed.includes(":") && ipv6.test(trimmed);
 }
 
-/**
- * Safely extracts client IP address, prioritizing trusted platform headers.
- * Never trusts arbitrary client-supplied headers if authoritative edge headers exist.
- *
- * Header Priority:
- * 1. cf-connecting-ip: Authoritative on Cloudflare Workers (vinext). Set and stripped by Cloudflare edge.
- * 2. x-vercel-forwarded-for: Authoritative on Vercel deployments. Set and sanitized by Vercel edge.
- * 3. x-forwarded-for: Standard proxy header. The rightmost valid IP is selected because reverse
- *    proxies append to the list, preventing attackers from prepending fake leftmost IPs.
- * 4. x-real-ip: Single IP fallback when behind dedicated reverse proxies (e.g. Nginx).
- * 5. Default fallback: "127.0.0.1".
- */
+// Select trusted platform edge headers first, or fallback to the rightmost proxy IP.
 export function extractClientIp(req: Request): string {
-  // 1. Cloudflare Workers authoritative client IP
   const cfConnectingIp = req.headers.get("cf-connecting-ip");
   if (cfConnectingIp && isValidIp(cfConnectingIp.trim())) {
     return cfConnectingIp.trim();
   }
 
-  // 2. Vercel edge authoritative client IP
   const vercelIp = req.headers.get("x-vercel-forwarded-for");
   if (vercelIp && isValidIp(vercelIp.trim())) {
     return vercelIp.trim();
   }
 
-  // 3. X-Forwarded-For: select rightmost valid IP to prevent client-injected leftmost spoofing
+  // Proxies append to X-Forwarded-For, so the rightmost IP is the least spoofable.
   const xForwardedFor = req.headers.get("x-forwarded-for");
   if (xForwardedFor) {
     const parts = xForwardedFor
@@ -176,7 +147,6 @@ export function extractClientIp(req: Request): string {
     }
   }
 
-  // 4. X-Real-IP fallback
   const xRealIp = req.headers.get("x-real-ip");
   if (xRealIp && isValidIp(xRealIp.trim())) {
     return xRealIp.trim();

@@ -14,7 +14,7 @@ export function ThemesList({
     );
   }
 
-  // Aggregate mentions by normalized keyword to eliminate repetitive chips
+  // Merge identical keywords across places so the pill list stays deduplicated.
   const keywordMap = new Map<string, number>();
   for (const t of themes) {
     const key = t.keyword.trim().toLowerCase();

@@ -44,12 +44,10 @@ export function useOverlay({
   React.useEffect(() => {
     if (!isOpen) return;
 
-    // 1. Capture previously focused element
     const triggerSnapshot = triggerRef?.current;
     triggerElRef.current =
       triggerSnapshot ?? (document.activeElement as HTMLElement | null);
 
-    // 2. Auto-focus initial element with mobile check
     const isMobile =
       preventMobileAutoFocus &&
       typeof window !== "undefined" &&
@@ -68,7 +66,7 @@ export function useOverlay({
       }, 50);
     }
 
-    // 3. Keydown handling (Escape + Focus Trap)
+    // Trap keyboard tab focus within the overlay and close on Escape.
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -106,7 +104,7 @@ export function useOverlay({
 
     document.addEventListener("keydown", handleKeyDown);
 
-    // 4. Robust body scroll lock
+    // Lock background scrolling while the overlay is mounted.
     const prevBodyOverflow = document.body.style.overflow;
     const prevHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
@@ -118,7 +116,7 @@ export function useOverlay({
       document.body.style.overflow = prevBodyOverflow;
       document.documentElement.style.overflow = prevHtmlOverflow;
 
-      // 5. Restore focus to trigger
+      // Return focus to the opening element when dismissed.
       const toFocus = triggerSnapshot ?? triggerElRef.current;
       toFocus?.focus();
     };

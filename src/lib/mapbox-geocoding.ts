@@ -12,7 +12,8 @@ export interface GeocodingResult {
 }
 
 const MAX_GEOCODE_CACHE = 100;
-const GEOCODE_TIMEOUT_MS = 6000; // 6s defensive timeout to prevent UI hangs
+// Abort geocoding quickly so slow network doesn't freeze the search dropdown.
+const GEOCODE_TIMEOUT_MS = 6000;
 const searchPlacesCache = new Map<string, GeocodingResult[]>();
 const reverseGeocodeCache = new Map<string, string>();
 
@@ -23,6 +24,7 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
   const cached = searchPlacesCache.get(clean);
   if (cached) return cached;
 
+  // Fallback to offline presets when offline or running without a Mapbox token.
   const fallbackResults = () =>
     KNOWN_PLACES.filter((p) =>
       p.label.toLowerCase().includes(clean) ||
@@ -101,7 +103,7 @@ export async function reverseGeocode(
   const cached = reverseGeocodeCache.get(cacheKey);
   if (cached) return cached;
 
-  // If close to a preset, use the preset name
+  // Snap to nearby known preset names to skip unnecessary reverse geocoding lookups.
   const closePreset = AREA_PRESETS.find((p) => {
     const dLat = Math.abs(p.lat - lat);
     const dLng = Math.abs(p.lng - lng);

@@ -80,6 +80,7 @@ interface ReviewTarget {
   role: "anchor" | "weak-incumbent" | "median";
 }
 
+// Pick a mix of high-volume anchors and low-rated places to uncover both traffic drivers and customer complaints.
 export function selectReviewTargets(places: MapsPlace[]): ReviewTarget[] {
   const withIds = places.filter((p) => Boolean(p.data_id));
   const picked = new Map<string, ReviewTarget>();
@@ -125,28 +126,18 @@ export function selectReviewTargets(places: MapsPlace[]): ReviewTarget[] {
   return [...picked.values()];
 }
 
-/**
- * Orchestrates the full market scan pipeline:
- * 1. Scope resolution (city vs neighborhood)
- * 2. Mock mode execution when offline or keys absent
- * 3. Cache & in-flight deduplication check
- * 4. External parallel queries (Google Maps, Reviews, Trends)
- * 5. Deterministic scoring synthesis (Gap Signal v0)
- * 6. Evidence ledger and natural language insight generation
- */
+// Orchestrates scope resolution, caching, external fetching, and deterministic score synthesis.
 export async function executeScanPipeline(
   input: ScanPipelineInput,
 ): Promise<ScanResult> {
   const { lat, lng, categoryId, areaLabel } = input;
   const category = resolveCategory(categoryId);
 
-  // 1. Resolve Scope (City-wide vs Neighborhood)
   const resolvedScope = resolveLocationScope(areaLabel);
   const scopeType = input.scope ?? resolvedScope.scope;
   const isCity = scopeType === "city";
   const cityName = resolvedScope.cityName;
 
-  // 2. Mock Mode (Zero-cost, fully offline/safe)
   const hasKey = (serverEnv.SERPAPI_KEY ?? "").trim().length > 0;
   if (!hasKey || serverEnv.NEXT_PUBLIC_USE_MOCK) {
     const mock = generateMockScanResult({
@@ -160,7 +151,6 @@ export async function executeScanPipeline(
     return scanResultSchema.parse(mock);
   }
 
-  // 3. In-flight Deduplication & Cache Check
   const scanKey = getScanCacheKey({
     lat,
     lng,
@@ -179,17 +169,16 @@ export async function executeScanPipeline(
     try {
       return await inFlight;
     } catch {
-      // If the running in-flight scan threw an error, fall through to attempt a fresh execution
+      // Fall through on error to attempt a fresh execution.
     }
   }
 
-  // 4. Live Execution with In-Flight Tracking
   const executionPromise = (async (): Promise<ScanResult> => {
     const ledger: LedgerEntry[] = [];
     let geoPlaces: (MapsPlace & { lat: number; lng: number })[] = [];
     let effectiveRadiusKm = SCAN_RADIUS_KM;
 
-    // Start Google Trends fetch in parallel with Maps and Reviews queries
+    // Fetch Trends in parallel with Maps so timeline data is ready when places finish downloading.
     const trendQueries = [category.trendsQuery, ...category.siblings].slice(0, 5);
     const trendsPromise = fetchTrends({
       q: trendQueries.join(","),
@@ -217,7 +206,7 @@ export async function executeScanPipeline(
         resultCount: page1Places.length,
       });
 
-      // Fetch Page 2 only if page 1 returned a full batch (20 items)
+      // Only fetch page 2 if page 1 maxed out at 20 results.
       let page2Places: MapsPlace[] = [];
       if (page1Places.length >= 20) {
         try {
@@ -294,7 +283,7 @@ export async function executeScanPipeline(
       effectiveRadiusKm = SCAN_RADIUS_KM;
     }
 
-    // Isolated review target fetching: individual failure does not abort scan
+    // Fetch reviews concurrently without failing the entire scan if one establishment errors.
     const targets = selectReviewTargets(geoPlaces);
     const reviewsByTarget = (
       await Promise.all(
@@ -317,7 +306,6 @@ export async function executeScanPipeline(
       )
     ).filter((r): r is NonNullable<typeof r> => r !== null);
 
-    // Await parallelized Trends fetch
     const trendsTimeline = await trendsPromise;
     const trendsId = `trends-${reviewsByTarget.length + 1}`;
     let timeline: TrendsTimelinePoint[] = [];
@@ -339,7 +327,6 @@ export async function executeScanPipeline(
       });
     }
 
-    /* ---- Competitors ---- */
     const targetRole = new Map(
       reviewsByTarget.map((r) => [placeKey(r.target.place), r.target.role]),
     );
@@ -355,12 +342,12 @@ export async function executeScanPipeline(
       evidence: "maps-1",
     }));
 
-    /* ---- Themes (gated) ---- */
     const reviewsExamined = reviewsByTarget.reduce(
       (a, r) => a + r.data.reviews.length,
       0,
     );
     let themes: PlaceTheme[] = [];
+    // Require enough total reviews before surfacing themes to avoid showing misleading single-review topics.
     let themesWithheld = reviewsExamined < MIN_REVIEWS_EXAMINED_FOR_THEMES;
     if (!themesWithheld) {
       for (const r of reviewsByTarget) {
@@ -380,7 +367,6 @@ export async function executeScanPipeline(
       if (themes.length === 0) themesWithheld = true;
     }
 
-    /* ---- Scoring Components ---- */
     const targetName = trendQueries[0].toLowerCase();
     const targetValues = timeline
       .map((pt) => pt.values.find((v) => v.query.toLowerCase() === targetName))
@@ -420,7 +406,6 @@ export async function executeScanPipeline(
       qualityGap,
     });
 
-    /* ---- Insights ---- */
     const insights: Insight[] = [];
     if (trendSignal) {
       const dir =

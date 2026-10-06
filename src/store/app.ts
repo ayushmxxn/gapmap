@@ -19,6 +19,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>()((set) => ({
+  // Center on Koramangala, Bengaluru for the initial mock state.
   lat: 12.9352,
   lng: 77.6245,
   areaLabel: "",

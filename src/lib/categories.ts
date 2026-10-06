@@ -1,8 +1,4 @@
-/**
- * Curated scan categories. Each carries its Maps query, its Trends query,
- * and up to 4 sibling queries so the Trends demand signal is benchmarked
- * inside a SINGLE google_trends call (max 5 queries per TIMESERIES search).
- */
+// Sibling queries benchmark relative interest in a single Trends call (5 term max).
 export interface Category {
   id: string;
   label: string;
@@ -198,7 +194,6 @@ export function resolveCategory(idOrQuery: string): Category {
 
   const clean = trimmed.toLowerCase();
 
-  // 1. Direct or alias match against predefined categories
   const existing = CATEGORIES.find(
     (c) =>
       c.id.toLowerCase() === clean ||
@@ -207,7 +202,6 @@ export function resolveCategory(idOrQuery: string): Category {
   );
   if (existing) return existing;
 
-  // 2. Match against BUSINESS_DIRECTORY items
   for (const group of BUSINESS_DIRECTORY) {
     const item = group.items.find(
       (i) => i.id.toLowerCase() === clean || i.label.toLowerCase() === clean,
@@ -223,7 +217,7 @@ export function resolveCategory(idOrQuery: string): Category {
     }
   }
 
-  // 3. Custom category handling with acronym preservation
+  // Build fallback category descriptors on the fly for custom or unlisted business searches.
   const normalized = trimmed.replace(/[-_]+/g, " ");
   const label = normalized
     .split(/\s+/)

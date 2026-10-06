@@ -15,18 +15,9 @@ import {
   setInFlightTrends,
 } from "@/lib/scan-cache";
 
-/**
- * Server-side SerpApi client. Never import from client components.
- *
- * Hardened with:
- * - Strict schema validation with safe fallbacks.
- * - Non-leaking error sanitization (API keys never appear in errors or logs).
- * - Per-request socket and promise timeouts.
- * - Explicit handling of empty result states (SerpApi "hasn't returned any results").
- * - Specialized error classifications (timeout, rate-limit, auth, network).
- */
-
-const DEFAULT_TIMEOUT_MS = 12000; // 12 seconds per external request
+// SerpApi stays server-side so the key never reaches the browser.
+// Generous timeout to accommodate slow external scraping responses.
+const DEFAULT_TIMEOUT_MS = 12000;
 
 export class SerpApiError extends Error {
   public readonly statusCode: number;
@@ -85,9 +76,7 @@ export class SerpApiAuthError extends SerpApiError {
   }
 }
 
-/**
- * Strips raw API keys and query-param secrets from text before any logging.
- */
+// Strip API keys from logged error strings to prevent leaking credentials into monitoring tools.
 export function sanitizeSecrets(text: string): string {
   const key = serverEnv.SERPAPI_KEY;
   let sanitized = text;
@@ -278,12 +267,11 @@ async function callSerpApi(
     });
   }
 
-  // Check for error payload from SerpApi
   if (typeof raw === "object" && raw !== null && "error" in raw) {
     const errField = String((raw as { error?: unknown }).error ?? "");
     if (errField.length > 0) {
       if (isEmptyMapsResultMessage(errField)) {
-        // Valid zero-results state from Google Maps
+        // Google Maps returns an error string when no places match instead of an empty array.
         return { local_results: [] };
       }
       if (isRateLimitMessage(errField)) {
@@ -330,7 +318,7 @@ export async function fetchMapsPlaces(
   const parsed = mapsResponseSchema.safeParse(raw);
   if (!parsed.success) {
     logSafeError("Maps response failed schema validation", parsed.error);
-    // Graceful fallback: extract any valid places
+    // Recover valid place entries if only a subset fail schema validation.
     if (
       typeof raw === "object" &&
       raw !== null &&
@@ -383,7 +371,7 @@ export async function fetchPlaceReviews(
 }
 
 export interface TrendsSearchInput {
-  /** Comma-separated, max 5 queries. First query is the target category. */
+  // Trends allows up to 5 comma-separated terms; first term is the primary category.
   q: string;
   geo: string;
   date: string;

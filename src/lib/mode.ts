@@ -1,6 +1,6 @@
 import { clientEnv } from "@/lib/env";
 
-/** Central mock/live switch. Defaults to mock (no network, no keys). */
+// Defaults to mock mode so searches work out of the box without API keys.
 export function isMockMode(): boolean {
   return clientEnv.NEXT_PUBLIC_USE_MOCK;
 }

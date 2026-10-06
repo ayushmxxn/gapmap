@@ -33,13 +33,12 @@ export function usePlaceAutocomplete({
   const [isAutocompleteOpen, setIsAutocompleteOpen] = React.useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = React.useState(-1);
 
-  // Check synchronous preset match (0ms latency)
+  // Presets resolve synchronously without waiting on network geocoding.
   const preset = React.useMemo(
     () => findMatchingPreset(locationText),
     [locationText],
   );
 
-  // Derive final resolved location
   const resolvedArea = preset
     ? {
         lat: preset.lat,
@@ -56,7 +55,7 @@ export function usePlaceAutocomplete({
   const resolutionError =
     !preset && Boolean(locationText.trim()) && asyncError;
 
-  // Debounced location resolution & autocomplete suggestions for non-presets
+  // Debounce remote geocoding to avoid querying Mapbox on every keystroke.
   React.useEffect(() => {
     const locText = locationText.trim();
 

@@ -19,6 +19,7 @@ export function MapWrapper({
   className?: string;
 }) {
   const isGlobe = mode === "globe";
+  // Wait for client hydration to finish before initializing WebGL.
   const mounted = React.useSyncExternalStore(
     emptySubscribe,
     () => true,

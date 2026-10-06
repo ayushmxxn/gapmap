@@ -6,10 +6,7 @@ import { executeScanPipeline } from "@/lib/services/scan-pipeline";
 import { scanRequestSchema } from "@/types/scan";
 import { siteUrl } from "@/lib/env";
 
-/**
- * Validates request origin to protect against unauthorized cross-site requests
- * and blind POST credit-draining attacks.
- */
+// Blocks third-party websites from triggering scans and consuming search credits.
 function isAllowedOrigin(req: Request): boolean {
   // Reject explicit cross-site browser requests
   const secFetchSite = req.headers.get("sec-fetch-site");
@@ -47,7 +44,7 @@ function isAllowedOrigin(req: Request): boolean {
 
 export async function POST(req: Request) {
   try {
-    // 1. Enforce JSON Content-Type (prevents simple cross-origin blind POST attacks)
+    // Enforcing JSON Content-Type blocks simple cross-origin form submissions without preflight.
     const contentType = req.headers.get("content-type") || "";
     if (!contentType.toLowerCase().includes("application/json")) {
       return NextResponse.json(
@@ -59,7 +56,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Reject unauthorized cross-site requests
     if (!isAllowedOrigin(req)) {
       return NextResponse.json(
         {
@@ -70,7 +66,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. IP Rate Limiting with safe proxy detection
+    // Rate limit per client IP before triggering external SerpApi requests.
     const ip = extractClientIp(req);
     const rateLimit = checkRateLimit(ip);
     if (rateLimit.limited) {
@@ -88,7 +84,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Strict Input Validation
     let rawBody: unknown;
     try {
       rawBody = await req.json();
@@ -111,7 +106,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Delegate to Domain Pipeline Service
     try {
       const result = await executeScanPipeline(parsedInput.data);
       return NextResponse.json(result);

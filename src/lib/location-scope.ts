@@ -9,14 +9,7 @@ export interface ResolvedScope {
   neighborhoodName?: string;
 }
 
-/**
- * Resolves an area label to either a city-wide scope or a neighborhood/local scope.
- * - "Gwalior, Madhya Pradesh" -> City ("Gwalior")
- * - "Gwalior" -> City ("Gwalior")
- * - "Koramangala, Bengaluru" -> Neighborhood ("Koramangala" in "Bengaluru")
- * - "Bandra West, Mumbai" -> Neighborhood ("Bandra West" in "Mumbai")
- * - "Mumbai, Maharashtra" -> City ("Mumbai")
- */
+// Decides whether to scan a wide metro area (city) or a 1.5 km radius (neighborhood).
 export function resolveLocationScope(areaLabel: string): ResolvedScope {
   const clean = areaLabel.trim();
   if (!clean) {
@@ -29,7 +22,6 @@ export function resolveLocationScope(areaLabel: string): ResolvedScope {
 
   const lower = clean.toLowerCase();
 
-  // 1. Direct match in KNOWN_PLACES
   const matched = KNOWN_PLACES.find(
     (p) =>
       p.label.toLowerCase() === lower ||
@@ -53,14 +45,13 @@ export function resolveLocationScope(areaLabel: string): ResolvedScope {
     };
   }
 
-  // 2. Comma-separated parts analysis
   const parts = clean.split(",").map((p) => p.trim());
 
   if (parts.length >= 2) {
     const firstPart = parts[0];
     const secondPart = parts[1].toLowerCase();
 
-    // If second part is a state / province (e.g. "Gwalior, Madhya Pradesh" or "Pune, Maharashtra")
+    // Matching a state indicates a city-level query like "Gwalior, Madhya Pradesh".
     if (INDIAN_STATES_AND_UTS.has(secondPart)) {
       return {
         scope: "city",
@@ -69,7 +60,7 @@ export function resolveLocationScope(areaLabel: string): ResolvedScope {
       };
     }
 
-    // If second part is a known city (e.g. "Koramangala, Bengaluru", "Bandra West, Mumbai")
+    // Matching a city name indicates a neighborhood query like "Koramangala, Bengaluru".
     return {
       scope: "neighborhood",
       label: `Neighborhood scan · ${firstPart}`,
@@ -78,7 +69,6 @@ export function resolveLocationScope(areaLabel: string): ResolvedScope {
     };
   }
 
-  // 3. Single name check
   const singleNameLower = clean.toLowerCase();
   const knownCity = KNOWN_PLACES.find(
     (p) =>
@@ -97,7 +87,7 @@ export function resolveLocationScope(areaLabel: string): ResolvedScope {
     };
   }
 
-  // Default fallback: single word without neighborhood signifiers is treated as city
+  // Default to city-wide when ambiguous so we don't prematurely constrain the scan area.
   return {
     scope: "city",
     label: `City-wide scan · ${clean}`,

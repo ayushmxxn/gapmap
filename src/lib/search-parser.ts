@@ -16,7 +16,7 @@ export interface ParsedSearch {
 }
 
 const KNOWN_BUSINESS_PREFIXES = [
-  // Multi-word phrases first
+  // Longer phrases first to match "ev charging station" before "ev charging".
   "ev charging station",
   "ev charging stations",
   "ev charging",
@@ -55,7 +55,6 @@ const KNOWN_BUSINESS_PREFIXES = [
   "flower shop",
   "ice cream shop",
   "burger joint",
-  // Single-word terms
   "bakery",
   "bakeries",
   "salon",
@@ -94,7 +93,6 @@ export function parseSearchQuery(rawQuery: string): {
     return { businessText: "", locationText: "" };
   }
 
-  // 1. Check if query starts with a preposition (e.g. "in Koramangala", "near Bandra")
   const startsWithPrep = clean.match(/^(?:in|near|at|around)\s+(.+)$/i);
   if (startsWithPrep && startsWithPrep[1]) {
     return {
@@ -103,7 +101,6 @@ export function parseSearchQuery(rawQuery: string): {
     };
   }
 
-  // 2. Check if query ends with a preposition (e.g. "Cafe in", "Bakery near")
   const endsWithPrep = clean.match(/^(.*?)\s+(?:in|near|at|around)\s*$/i);
   if (endsWithPrep && endsWithPrep[1]) {
     return {
@@ -112,7 +109,6 @@ export function parseSearchQuery(rawQuery: string): {
     };
   }
 
-  // 3. Check for comma separator (e.g. "Cafe, Koramangala", "Bakery, ")
   const commaMatch = clean.match(/^(.*?),\s*(.*)$/);
   if (commaMatch && commaMatch[1]) {
     return {
@@ -121,8 +117,7 @@ export function parseSearchQuery(rawQuery: string): {
     };
   }
 
-  // 4. Check for preposition in middle (e.g. "Cafe in Koramangala", "Walk in clinic in Hauz Khas")
-  // Greedy ^(.*) matches the last preposition, correctly grouping business names that contain 'in'
+  // Match the last preposition so names like "Walk in clinic in Hauz Khas" split on the second "in".
   const prepMatch = clean.match(/^(.*)\s+(?:in|near|at|around)\s+(.*)$/i);
   if (prepMatch && prepMatch[1] && prepMatch[2]) {
     return {
@@ -133,8 +128,7 @@ export function parseSearchQuery(rawQuery: string): {
 
   const lower = clean.toLowerCase();
 
-  // 5. Check if query starts with a known business prefix without prepositions
-  // (e.g. "Bakery Bandra West", "Pet grooming Hauz Khas", "gym delhi")
+  // Sort longest prefix first so specific categories match before general ones.
   const sortedPrefixes = [...KNOWN_BUSINESS_PREFIXES].sort(
     (a, b) => b.length - a.length,
   );
@@ -150,8 +144,7 @@ export function parseSearchQuery(rawQuery: string): {
     }
   }
 
-  // 6. Check if query ends with any known location suffix
-  // (e.g. "Tattoo studio Bandra West", "Pottery workshop Koramangala", "Specialty coffee Delhi")
+  // Sort longest city name first to prevent partial name collisions.
   const sortedPlaces = [...KNOWN_PLACES].sort((a, b) => {
     const aShort = a.label.split(",")[0].trim().length;
     const bShort = b.label.split(",")[0].trim().length;
@@ -192,13 +185,11 @@ export function parseSearchQuery(rawQuery: string): {
     }
   }
 
-  // 7. Check if entire query matches a known location preset
   const matchedPreset = findMatchingPreset(clean);
   if (matchedPreset) {
     return { businessText: "", locationText: matchedPreset.label };
   }
 
-  // 8. Check if entire query matches a known category
   if (
     CATEGORIES.some(
       (c) =>
@@ -210,7 +201,7 @@ export function parseSearchQuery(rawQuery: string): {
     return { businessText: clean, locationText: "" };
   }
 
-  // 9. Two words fallback: "gym delhi", "cafe indiranagar"
+  // Treat two unspecified words as business and location (e.g. "gym delhi").
   const words = clean.split(/\s+/);
   if (words.length === 2) {
     return {
@@ -219,7 +210,6 @@ export function parseSearchQuery(rawQuery: string): {
     };
   }
 
-  // 10. Default: assume it is a business query
   return { businessText: clean, locationText: "" };
 }
 

@@ -74,7 +74,6 @@ export function EvidenceSheet({
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
-        {/* Sticky compact header */}
         <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border/60 bg-background/95 backdrop-blur-sm px-6 py-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))]">
           <div className="min-w-0 pr-4">
             <h2 id="evidence-sheet-title" className="text-sm font-semibold text-foreground tracking-tight">Evidence &amp; analysis</h2>
@@ -97,9 +96,7 @@ export function EvidenceSheet({
           </button>
         </div>
 
-        {/* Scrollable content body */}
         <div className="flex flex-1 flex-col gap-7 overflow-y-auto overscroll-contain px-6 py-6 pb-[max(1.75rem,env(safe-area-inset-bottom,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))] pl-[max(1.5rem,env(safe-area-inset-left,0px))] text-xs">
-          {/* 1. What was found: Discovered businesses */}
           <section className="flex flex-col gap-3">
             <div>
               <h3 className="font-semibold text-foreground tracking-tight text-sm">
@@ -120,7 +117,6 @@ export function EvidenceSheet({
             />
           </section>
 
-          {/* 2. What customers are saying */}
           <section className="flex flex-col gap-3 border-t border-border/40 pt-6">
             <div>
               <h3 className="font-semibold text-foreground tracking-tight text-sm">What customers say</h3>
@@ -134,7 +130,6 @@ export function EvidenceSheet({
             />
           </section>
 
-          {/* 3. What demand looks like: Search demand */}
           <section className="flex flex-col gap-3 border-t border-border/40 pt-6">
             <div className="flex items-baseline justify-between gap-2">
               <h3 className="font-semibold text-foreground tracking-tight text-sm">Search demand</h3>
@@ -143,7 +138,6 @@ export function EvidenceSheet({
             <TrendChart trend={result.trend} />
           </section>
 
-          {/* 4. How the score was calculated (Collapsed by default) */}
           <section className="border-t border-border/40 pt-6">
             <details className="group rounded-xl bg-[#f2f2f2] dark:bg-muted/50 p-4 transition-all">
               <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
@@ -200,7 +194,6 @@ export function EvidenceSheet({
             </details>
           </section>
 
-          {/* 5. Technical details (Collapsed by default) */}
           <section className="pt-3">
             <details className="group rounded-xl bg-[#f2f2f2] dark:bg-muted/50 p-4 transition-all">
               <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
@@ -213,7 +206,6 @@ export function EvidenceSheet({
                 />
               </summary>
               <div className="mt-3.5 space-y-4 border-t border-border/40 pt-3.5 text-xs text-muted-foreground leading-relaxed">
-                {/* Source & Execution parameters */}
                 <div className="rounded-lg border border-border/50 bg-card p-3 space-y-1.5 text-xs">
                   <div className="flex justify-between py-0.5 border-b border-border/30">
                     <span className="text-muted-foreground">Data provider</span>

@@ -21,6 +21,7 @@ const EvidenceSheet = dynamic(
   { ssr: false },
 );
 
+// Runs a scan on first load when coordinates and category are passed in the URL.
 function useUrlSync() {
   const params = useSearchParams();
   const lastKey = React.useRef<string | null>(null);
@@ -220,7 +221,6 @@ export function ScanStudio() {
       >
         {status === "idle" && (
           <div className="flex w-full flex-1 flex-col justify-between py-4">
-            {/* Top row directly on hero section page - no separate navbar */}
             <div className="flex w-full items-center justify-between py-2 sm:py-2.5">
               <div className="flex items-center gap-2.5 select-none">
                 <Image
@@ -242,7 +242,6 @@ export function ScanStudio() {
             </div>
 
             <div className="my-auto grid w-full items-center lg:grid-cols-[minmax(0,580px)_minmax(0,1fr)] lg:gap-14 xl:gap-16 pt-10 pb-3 sm:py-6">
-            {/* Left Content Column */}
             <div className="flex w-full max-w-[600px] flex-col justify-center">
               <h1 className="text-3xl sm:text-[30px] md:text-[32px] lg:text-[34px] xl:text-[48px] font-semibold tracking-[-0.035em] text-foreground leading-[1.18] text-balance">
                 <span>See where your business could work</span>{" "}
@@ -272,7 +271,6 @@ export function ScanStudio() {
               </div>
             </div>
 
-            {/* Right Globe Column: Distinct secondary visual with clear separation on mobile */}
             <div className="relative w-full h-[220px] sm:h-[300px] lg:h-[480px] mt-10 sm:mt-12 lg:mt-0">
               <MapWrapper competitors={[]} mode="globe" className="h-full" />
             </div>
@@ -286,29 +284,24 @@ export function ScanStudio() {
               Analyzing neighborhood market, competition, and search demand…
             </div>
             <div className="grid gap-5 lg:gap-6 xl:gap-7 lg:grid-cols-[1fr_1.2fr] items-stretch w-full lg:h-[clamp(440px,calc(100dvh-6.5rem),520px)]">
-              {/* Left Card Skeleton: Mirrors SignalSummary */}
               <div className="flex flex-col justify-between rounded-2xl border border-neutral-200 dark:border-border bg-white dark:bg-card p-6 sm:p-7 xl:p-8 shadow-xs animate-pulse">
                 <div>
-                  {/* Context line skeleton */}
                   <div className="flex items-center gap-2">
                     <div className="h-3.5 w-28 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                     <div className="size-1 rounded-full bg-[#d4d4d4] dark:bg-zinc-700" />
                     <div className="h-3.5 w-16 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                   </div>
 
-                  {/* Score + verdict skeleton */}
                   <div className="mt-4 sm:mt-5 flex items-baseline gap-3.5">
                     <div className="h-14 sm:h-16 w-24 rounded-xl bg-[#e5e5e5] dark:bg-zinc-800" />
                     <div className="h-6 w-28 rounded-full bg-[#e8e8e8] dark:bg-zinc-800" />
                   </div>
 
-                  {/* Synthesis text skeleton */}
                   <div className="mt-3 sm:mt-4 space-y-2">
                     <div className="h-3.5 w-11/12 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                     <div className="h-3.5 w-3/4 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                   </div>
 
-                  {/* Supporting factors skeleton */}
                   <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-neutral-200 dark:border-border/60">
                     <div className="grid grid-cols-3 gap-3 sm:gap-4">
                       <div className="space-y-1.5">
@@ -327,14 +320,12 @@ export function ScanStudio() {
                   </div>
                 </div>
 
-                {/* Footer stats + button skeleton */}
                 <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-neutral-200 dark:border-border/60 flex items-center justify-between">
                   <div className="h-3.5 w-44 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
                   <div className="h-8 w-28 rounded-lg bg-[#e8e8e8] dark:bg-zinc-800" />
                 </div>
               </div>
 
-              {/* Right Card Skeleton: Mirrors Local Map */}
               <div className="relative flex min-h-[340px] sm:min-h-[380px] lg:min-h-0 h-full w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 dark:border-border bg-[#fafafa] dark:bg-zinc-900/60 p-6 shadow-xs animate-pulse">
                 <div className="relative flex items-center justify-center">
                   <div className="size-36 rounded-full border border-neutral-300/80 dark:border-zinc-800 bg-[#f2f2f2]/70 dark:bg-zinc-800/30" />

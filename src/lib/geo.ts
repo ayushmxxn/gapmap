@@ -9,7 +9,7 @@ export const SCAN_RADIUS_KM = 1.5;
 
 export const CITY_DEFAULT_METRO_RADIUS_KM = 25;
 
-/** Keep only places with coordinates inside the scan radius. */
+// Keep this calculation in kilometers so the map radius stays consistent.
 export function filterWithinRadius<T extends GeoPoint>(
   places: T[],
   center: GeoPoint,
@@ -22,12 +22,7 @@ export function filterWithinRadius<T extends GeoPoint>(
   });
 }
 
-/**
- * Filters places for a city-wide scan.
- * Unlike neighborhood scans (which constrain to a tight 1.5km circle),
- * city scans cover the broader metropolitan area up to maxMetroRadiusKm (default 25km)
- * using radial distance as the authoritative boundary mechanism.
- */
+// Keep city scans bounded so one search doesn't cover the entire country.
 export function filterWithinCity<T extends GeoPoint>(
   places: T[],
   center: GeoPoint,
@@ -47,7 +42,7 @@ export function densityPerKm2(count: number, radiusKm: number): number {
   return count / (Math.PI * radiusKm * radiusKm);
 }
 
-/** Computes the effective spread radius covering the city's commercial clusters (85th percentile distance) */
+// Use the 85th percentile to ignore extreme satellite suburbs when framing the map.
 export function effectiveSpreadRadiusKm(
   places: GeoPoint[],
   center: GeoPoint,
@@ -62,7 +57,7 @@ export function effectiveSpreadRadiusKm(
   return Math.max(3.5, Math.min(25, Number(distances[p85Index].toFixed(1))));
 }
 
-/** Median nearest-neighbour distance in km; Infinity when < 2 points. */
+// Measures competitor clustering density; returns Infinity when fewer than 2 places exist.
 export function medianNearestNeighborKm(places: GeoPoint[]): number {
   if (places.length < 2) return Number.POSITIVE_INFINITY;
   const gaps = places.map((p, i) => {

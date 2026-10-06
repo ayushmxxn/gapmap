@@ -56,6 +56,7 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    // Disable shader animation when the user prefers reduced motion.
     const loadShader = async () => {
       try {
         if (shaderRef.current) {
@@ -184,7 +185,6 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
             transform: "none",
           }}
         >
-          {/* Label Layer */}
           <div
             style={{
               position: "absolute",
@@ -235,7 +235,6 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
             </span>
           </div>
 
-          {/* Background Gradient Layer */}
           <div
             style={{
               position: "absolute",
@@ -266,7 +265,6 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
             />
           </div>
 
-          {/* Shader Canvas Container Layer */}
           <div
             style={{
               position: "absolute",
@@ -312,7 +310,6 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
             </div>
           </div>
 
-          {/* Interactive Button & Ripple Layer */}
           <button
             ref={buttonRef}
             type={type}

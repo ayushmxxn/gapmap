@@ -1,11 +1,4 @@
-/**
- * Gap Signal v0 — deterministic, no LLM.
- *
- * A *signal*, not proof: weighted evidence from Trends (primary demand),
- * review volume (supporting), Maps supply density, and review quality gaps.
- * Pure functions only. Timestamps live in the evidence ledger (built by the
- * route), never inside scoring math.
- */
+// Deterministic scoring engine combining Trends, review volume, supply density, and quality gaps.
 
 import {
   type CompetitionInput,
@@ -16,7 +9,6 @@ import {
   type Verdict,
 } from "@/types/scan";
 
-// Re-export all domain contracts and schemas so existing consumers remain intact
 export * from "@/types/scan";
 
 export const SCORING_WEIGHTS = {
@@ -30,9 +22,7 @@ function clamp(n: number, min = 0, max = 100): number {
   return Math.min(max, Math.max(min, n));
 }
 
-/* ---------------- Trend demand signal (primary) ---------------- */
-
-/** Least-squares slope per timeline step, mapped to 0–100 around 50. */
+// Map the timeline slope to 0-100 where 50 represents flat growth.
 export function slopeToScore(values: number[]): number {
   if (values.length < 2) return 50;
   const n = values.length;
@@ -49,6 +39,7 @@ export function slopeToScore(values: number[]): number {
 }
 
 export function computeTrendSignal(values: number[]): TrendSignal | null {
+  // Need at least 4 timeline data points to measure a reliable trajectory.
   if (values.length < 4) return null;
   const avgLevel = values.reduce((a, b) => a + b, 0) / values.length;
   const slopeScore = slopeToScore(values);
@@ -60,25 +51,21 @@ export function computeTrendSignal(values: number[]): TrendSignal | null {
   };
 }
 
-/* ---------------- Review-volume support (secondary) ---------------- */
-
 export function computeReviewSupport(totalReviews: number): number {
   if (totalReviews <= 0) return 0;
+  // Logarithmic scaling prevents high-volume chains from dominating the review score.
   return clamp(Math.round(25 * Math.log10(1 + totalReviews) - 10));
 }
-
-/* ---------------- Competition (inverted: higher = more saturated) ---------------- */
 
 export function computeCompetition(input: CompetitionInput): number {
   const countScore = clamp((input.count / 20) * 100);
   const densityScore = clamp((input.densityPerKm2 / 8) * 100);
+  // Benchmark against a 500m walking radius between adjacent competitors.
   const spreadScore = Number.isFinite(input.medianNearestKm)
     ? clamp(((0.5 - input.medianNearestKm) / 0.5) * 100)
     : 0;
   return Math.round((countScore + densityScore + spreadScore) / 3);
 }
-
-/* ---------------- Quality gap ---------------- */
 
 export function computeQualityGap(
   places: RatedPlace[],
@@ -91,12 +78,11 @@ export function computeQualityGap(
     .filter((p) => p.rating < 4)
     .reduce((a, p) => a + p.reviews, 0);
   const base = (lowRatedReviews / totalReviews) * 100;
+  // Boost the opportunity score when existing reviews frequently mention complaints.
   const boost =
     totalMentions > 0 ? (complaintMentions / totalMentions) * 20 : 0;
   return clamp(Math.round(base + boost));
 }
-
-/* ---------------- Gap Signal ---------------- */
 
 export function verdictFor(score: number): Verdict {
   if (score >= 75) return "strong";
@@ -105,6 +91,7 @@ export function verdictFor(score: number): Verdict {
 }
 
 export function computeGapSignal(input: GapSignalInput): GapSignal {
+  // Renormalize remaining weights so missing Trends data doesn't artificially depress the score.
   if (input.trend === null) {
     const rest =
       SCORING_WEIGHTS.reviewSupport +
@@ -117,6 +104,7 @@ export function computeGapSignal(input: GapSignalInput): GapSignal {
     );
     return { score, verdict: verdictFor(score), renormalized: true };
   }
+  // Invert competition so high market saturation lowers the opportunity score.
   const score = Math.round(
     SCORING_WEIGHTS.trend * input.trend.score +
       SCORING_WEIGHTS.reviewSupport * input.reviewSupport +

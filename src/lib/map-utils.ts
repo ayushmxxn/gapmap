@@ -1,9 +1,6 @@
 import type { Competitor } from "@/types/scan";
 
-/**
- * Calculates the exact Mapbox globe camera zoom level required to fit the entire Earth
- * sphere within the container with comfortable breathing room on all sides.
- */
+// Fits the 3D globe within the viewport regardless of window aspect ratio.
 export function getOptimalGlobeZoom(
   width: number,
   height: number,
@@ -22,9 +19,6 @@ export function getOptimalGlobeZoom(
   return Math.max(0.4, Math.min(2.5, Number(zoom.toFixed(2))));
 }
 
-/**
- * Returns a consistent semantic color hex code corresponding to competitor review ratings.
- */
 export function pinColor(rating: number | undefined): string {
   if (rating == null) return "#71717a";
   if (rating >= 4.3) return "#16a34a";
@@ -32,9 +26,6 @@ export function pinColor(rating: number | undefined): string {
   return "#dc2626";
 }
 
-/**
- * Deterministic unique identifier for a competitor map pin.
- */
 export function competitorKey(c: Competitor): string {
   return `${c.title}-${c.lat}-${c.lng}`;
 }

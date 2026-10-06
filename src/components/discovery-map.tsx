@@ -25,7 +25,7 @@ type Projection = "globe" | "mercator";
 
 const INDIA_CENTER: [number, number] = [78.9629, 22.5937];
 const LOCAL_ZOOM = 14;
-/** Above this zoom we render flat; below it we render the globe. */
+// Switch to flat projection when zoomed in close enough to inspect street details.
 const FLAT_ZOOM = 9;
 const ROUND_ZOOM = 5;
 
@@ -39,8 +39,7 @@ interface GlobeCapableMap {
   ) => void;
 }
 
-/** Clean satellite globe: full daylight first, labels/roads hidden
- *  so Earth is the focus. Unknown keys are ignored via try/catch. */
+// Hide roads and labels on the globe overview so geographic distribution remains the focus.
 const SATELLITE_CONFIG: [string, unknown][] = [
   ["lightPreset", "day"],
   ["showRoadsAndTransit", false],
@@ -100,7 +99,6 @@ export function DiscoveryMap({
     return () => window.removeEventListener("keydown", onKey);
   }, [selected]);
 
-  // Measurement states for reliable mounting
   const [dimensions, setDimensions] = React.useState<{ width: number; height: number } | null>(null);
   const [mapError, setMapError] = React.useState(false);
 
@@ -141,7 +139,7 @@ export function DiscoveryMap({
           }
         }
         const spaceBg = dark ? "#191b19" : "#ffffff";
-        /* Clean globe boundary with zero blue atmospheric halo/glow */
+        // Remove atmospheric haze so the globe sits flush against the page background.
         map.setFog?.({
           color: spaceBg,
           "high-color": spaceBg,
@@ -180,8 +178,7 @@ export function DiscoveryMap({
     [isLocal],
   );
 
-  /* Re-apply projection + atmosphere whenever the style reloads
-     (mount, theme toggle). */
+  // Re-apply projection and atmosphere settings whenever the style reloads (mount, theme toggle).
   React.useEffect(() => {
     const map = mapRef.current?.getMap();
     if (!map) return;
@@ -203,7 +200,6 @@ export function DiscoveryMap({
     };
   }, [mapStyle, isDark, applySettings]);
 
-  /* Measure container dimensions before rendering Map and handle resize/orientation */
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -276,7 +272,7 @@ export function DiscoveryMap({
     };
   }, [isLocal]);
 
-  /* Position map camera for local/city scan or fly globe when area is chosen. */
+  // Position map camera for local/city scan or fly globe when area is chosen.
   const lastCameraTargetRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     const targetKey = `${isLocal ? "local" : "globe"}-${scope}-${lat.toFixed(4)}-${lng.toFixed(4)}-${competitors.length}`;
@@ -311,6 +307,7 @@ export function DiscoveryMap({
             if (c.lat! < minLat) minLat = c.lat!;
             if (c.lat! > maxLat) maxLat = c.lat!;
           }
+          // Frame the entire city cluster when multiple competitors are returned.
           map.fitBounds(
             [
               [minLng, minLat],
@@ -375,7 +372,7 @@ export function DiscoveryMap({
       ref={containerRef}
       className="relative h-full w-full min-h-0 overflow-hidden"
     >
-      {/* 1. Only mount Map once container has measured dimensions */}
+      {/* Wait for measured container dimensions so Mapbox initializes with correct canvas bounds */}
       {dimensions && dimensions.width > 0 && dimensions.height > 0 && !mapError ? (
         <Map
           ref={mapRef}

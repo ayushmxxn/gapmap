@@ -1,24 +1,13 @@
 import type { ScanResult } from "@/lib/scoring";
 import type { PlaceReviews, TrendsTimelinePoint } from "@/lib/serpapi";
 
-/**
- * Production-grade in-memory multi-tier cache and in-flight request coalescer.
- *
- * Prevents:
- * 1. Duplicate expensive SerpApi calls when client network retries or double-clicks occur.
- * 2. Redundant Google Trends requests (Google Trends data is national and identical across neighborhoods).
- * 3. Redundant Google Maps Reviews requests for high-volume anchor places queried across adjacent scans.
- * 4. Memory bloat via strict entry count ceilings and LRU (least-recently-used) eviction.
- */
+// Coalesces concurrent requests and caches responses to avoid burning SerpApi credits.
 
 interface CacheEntry<T> {
   data: T;
   expiresAt: number;
 }
 
-/* =========================================================================
-   1. Full Scan Result Cache (5 min TTL)
-   ========================================================================= */
 
 const SCAN_CACHE_TTL_MS = 5 * 60 * 1000;
 const MAX_SCAN_ENTRIES = 200;
@@ -41,6 +30,7 @@ export function getScanCacheKey(input: {
   ) {
     return `city:${cat}:${input.cityName.toLowerCase().trim()}`;
   }
+  // Round coordinates so nearby searches share cache hits.
   return `${input.scope}:${cat}:${input.lat.toFixed(4)}:${input.lng.toFixed(4)}`;
 }
 
@@ -58,7 +48,7 @@ export function getCachedScan(key: string): ScanResult | null {
 export function setCachedScan(key: string, result: ScanResult): void {
   const now = Date.now();
   if (scanCache.size >= MAX_SCAN_ENTRIES) {
-    // Evict oldest entry in O(1)
+    // Map preserves insertion order, so the first key is the oldest entry.
     const oldestKey = scanCache.keys().next().value;
     if (oldestKey) scanCache.delete(oldestKey);
   }
@@ -83,11 +73,7 @@ export function clearInFlightScan(key: string): void {
   inFlightScans.delete(key);
 }
 
-/* =========================================================================
-   2. Google Trends Cache (60 min TTL)
-   National search volume for a query (e.g. "gym" in "IN") does not change
-   from neighborhood to neighborhood and updates daily at most.
-   ========================================================================= */
+// Trends data is national and updates slowly, so an hour cache avoids duplicate queries.
 
 const TRENDS_CACHE_TTL_MS = 60 * 60 * 1000; // 60 minutes
 const MAX_TRENDS_ENTRIES = 100;
@@ -146,10 +132,7 @@ export function clearInFlightTrends(key: string): void {
   inFlightTrends.delete(key);
 }
 
-/* =========================================================================
-   3. Place Reviews Cache (30 min TTL)
-   Customer reviews & topics for specific establishments (by data_id)
-   ========================================================================= */
+// Reviews don't change frequently, so cache by place ID across nearby scans.
 
 const REVIEWS_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const MAX_REVIEWS_ENTRIES = 300;

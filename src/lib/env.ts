@@ -1,21 +1,6 @@
 import { z } from "zod";
 
-/**
- * GapMap Environment Variable Architecture
- *
- * 1. Server-Only Secrets:
- *    - SERPAPI_KEY: Private API key for Google Maps, Reviews, and Trends ingestion.
- *      Must NEVER be prefixed with NEXT_PUBLIC_ and must never reach the browser bundle.
- *    - VERCEL_PROJECT_PRODUCTION_URL: Injected automatically by Vercel for preview/production.
- *
- * 2. Intentionally Public Client Configuration:
- *    - NEXT_PUBLIC_MAPBOX_TOKEN: Public access token required by Mapbox GL JS running
- *      in the browser for vector map rendering and client-side geocoding.
- *    - NEXT_PUBLIC_USE_MOCK: Client-visible runtime/build flag (default: true). Must remain
- *      public so browser search hooks & map interactions can bypass external Mapbox API
- *      calls when running offline in zero-key mock mode without network round-trips.
- *    - NEXT_PUBLIC_APP_URL: Public canonical URL for OpenGraph, sitemap, and metadata generation.
- */
+// Default to mock mode so the app works immediately after cloning without API keys.
 
 const clientSchema = z.object({
   NEXT_PUBLIC_USE_MOCK: z
@@ -28,6 +13,7 @@ const clientSchema = z.object({
 });
 
 const serverSchema = clientSchema.extend({
+  // SerpApi stays server-side so the key never reaches the browser.
   SERPAPI_KEY: z.string().optional().default(""),
 });
 
@@ -53,13 +39,11 @@ function readServerEnv(): ServerEnv {
 }
 
 export const clientEnv = readClientEnv();
+// Prevent browser bundles from trying to read server-only secrets.
 export const serverEnv =
   typeof window === "undefined" ? readServerEnv() : (clientEnv as ServerEnv);
 
-/**
- * Returns the canonical base URL of the application.
- * Priority: NEXT_PUBLIC_APP_URL -> Vercel Production URL -> https://gapmap.app
- */
+// Resolves canonical base URL for OpenGraph and sitemaps.
 export function getSiteUrl(): string {
   const configured =
     clientEnv.NEXT_PUBLIC_APP_URL ||

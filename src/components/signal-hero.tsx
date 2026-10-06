@@ -49,14 +49,12 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
         <h2 id="signal-summary-heading" className="sr-only">
           Opportunity Analysis for {result.category.label} in {result.area.label}
         </h2>
-        {/* 1. Context: Location + Business analyzed */}
         <div className="flex items-center gap-1.5 text-xs sm:text-[13px] text-muted-foreground font-medium truncate">
           <span className="font-semibold text-foreground truncate max-w-72 sm:max-w-md">{result.area.label}</span>
           <span className="text-muted-foreground/35">·</span>
           <span className="text-foreground/85 whitespace-nowrap">{result.category.label}</span>
         </div>
 
-        {/* 2 & 3. Opportunity Score & Human Verdict */}
         <div className="mt-4 sm:mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-2">
           <div className="flex items-baseline gap-1.5">
             <span className="text-6xl sm:text-[68px] font-semibold tracking-[-0.04em] tabular-nums text-foreground leading-none">
@@ -82,12 +80,10 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
           </span>
         </div>
 
-        {/* 4. Why: Concise Plain-English Synthesis */}
         <p className="mt-3 sm:mt-4 text-sm sm:text-[15px] font-normal leading-relaxed text-foreground/90 text-balance max-w-xl">
           {conclusion}
         </p>
 
-        {/* 3 Supporting Factors: Clean, borderless columns with whitespace */}
         <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-border/50">
           <div className="grid grid-cols-3 gap-3 sm:gap-4">
             {factors.map((f) => (
@@ -104,7 +100,6 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
         </div>
       </div>
 
-      {/* 5 & 6. Mapped Competitors Summary & Evidence Action */}
       <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-border/50 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5 text-xs sm:text-[12.5px] text-muted-foreground flex-wrap">
           <span className="font-semibold text-foreground">{result.stats.places}</span>

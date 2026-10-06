@@ -1,7 +1,4 @@
-/**
- * Geographic constants, presets, and known places for GapMap.
- * Isolated from categories and query parsing to prevent circular dependencies.
- */
+// Keeps geographic presets isolated to avoid circular imports with categories and search parsers.
 
 export interface AreaPreset {
   id: string;

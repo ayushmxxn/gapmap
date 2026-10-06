@@ -48,7 +48,6 @@ export function UnifiedSearch({
   onSearch,
   className,
 }: UnifiedSearchProps) {
-  // Construct initial query only if explicit initial values are provided
   const defaultInitialQuery = React.useMemo(() => {
     if (!initialCategoryId || !initialAreaLabel) return "";
     const defaultCategory = resolveCategory(initialCategoryId);
@@ -65,16 +64,13 @@ export function UnifiedSearch({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const moreButtonRef = React.useRef<HTMLButtonElement>(null);
 
-  // Parse query into business and location segments
   const parsed = React.useMemo(() => parseSearchQuery(query), [query]);
 
-  // Resolve business category (predefined or custom)
   const activeCategory = React.useMemo(() => {
     if (!parsed.businessText) return null;
     return resolveCategory(parsed.businessText);
   }, [parsed.businessText]);
 
-  // Autocomplete and geocoding resolution hook
   const {
     resolvedArea,
     setAsyncArea,
@@ -121,7 +117,6 @@ export function UnifiedSearch({
       !parsed.locationText) ||
     (!isResolving && !parsed.businessText && Boolean(parsed.locationText));
 
-  // Handle submission
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!isReady || !activeCategory || !resolvedArea) {
@@ -141,7 +136,6 @@ export function UnifiedSearch({
     });
   };
 
-  // Select an autocomplete location suggestion
   const handleSelectSuggestion = (place: GeocodingResult) => {
     setAsyncArea({
       lat: place.lat,
@@ -162,7 +156,6 @@ export function UnifiedSearch({
     inputRef.current?.focus();
   };
 
-  // Keyboard navigation within the input & suggestions
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (isAutocompleteOpen && suggestions.length > 0) {
       if (e.key === "ArrowDown") {
@@ -206,7 +199,7 @@ export function UnifiedSearch({
     }
   };
 
-  // Select a business type (from quick picks or "+ More" modal) while preserving location
+  // Preserve any existing location when toggling or replacing the business category.
   const handleSelectBusiness = (businessLabel: string) => {
     const isCurrentlySelected =
       activeCategory !== null &&
@@ -248,7 +241,6 @@ export function UnifiedSearch({
     }
   };
 
-  // Clear query handler
   const handleClear = () => {
     setQuery("");
     setShowValidation(false);
@@ -257,7 +249,6 @@ export function UnifiedSearch({
     inputRef.current?.focus();
   };
 
-  // Toggle "+ More" modal
   const toggleMorePicker = () => {
     setIsAutocompleteOpen(false);
     setIsMoreOpen(true);
@@ -280,7 +271,6 @@ export function UnifiedSearch({
       onSubmit={handleSubmit}
       className={cn("flex flex-col relative w-full sm:max-w-[496px]", className)}
     >
-      {/* 1. Accessible Label */}
       <label
         htmlFor="unified-search-input"
         className="text-xs sm:text-[13px] font-medium tracking-tight text-muted-foreground/90 sm:text-foreground/80 select-none"
@@ -288,7 +278,6 @@ export function UnifiedSearch({
         What are you thinking of opening?
       </label>
 
-      {/* 2. Primary Unified Input with Embedded Autocomplete */}
       <div className="relative mt-1.5 sm:mt-2 flex items-center">
         <HugeiconsIcon
           icon={Search01Icon}
@@ -343,7 +332,6 @@ export function UnifiedSearch({
           </button>
         )}
 
-        {/* Location Autocomplete & Disambiguation Popover */}
         {isAutocompleteOpen && suggestions.length > 0 && (
           <ul
             id="location-autocomplete-list"
@@ -424,7 +412,6 @@ export function UnifiedSearch({
           );
         })}
 
-        {/* "+ More" Progressive Disclosure Pill */}
         <ShortcutPill
           ref={moreButtonRef}
           data-cuelume-open
@@ -442,7 +429,6 @@ export function UnifiedSearch({
             : "+ More"}
         </ShortcutPill>
 
-        {/* Centered Business Picker Modal */}
         {isMoreOpen && (
           <BusinessPickerModal
             isOpen={isMoreOpen}
@@ -478,21 +464,18 @@ export function UnifiedSearch({
             </div>
           )}
 
-          {/* Location Resolution Failed */}
           {!isResolving && resolutionFailed && parsed.locationText && (
             <span className="text-rose-600 dark:text-rose-400">
               Location not found. Try a neighborhood or city name.
             </span>
           )}
 
-          {/* Location Network / API Error */}
           {!isResolving && resolutionError && parsed.locationText && (
             <span className="text-rose-600 dark:text-rose-400">
               Unable to reach location service. Please check your connection.
             </span>
           )}
 
-          {/* Validation prompt when user clicks CTA without entering valid search */}
           {showValidation && !isResolving && !parsed.businessText && !parsed.locationText && (
             <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
               <span className="size-1.5 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)] shrink-0" />
@@ -500,7 +483,6 @@ export function UnifiedSearch({
             </div>
           )}
 
-          {/* Needs Location State */}
           {!isResolving &&
             !resolutionFailed &&
             !resolutionError &&
@@ -521,7 +503,6 @@ export function UnifiedSearch({
               </div>
             )}
 
-          {/* Needs Business State */}
           {!isResolving &&
             !parsed.businessText &&
             parsed.locationText && (
@@ -542,7 +523,6 @@ export function UnifiedSearch({
         </div>
       )}
 
-      {/* 5. Primary CTA */}
       <div className={cn(hasFeedback ? "mt-3.5 sm:mt-4" : "mt-5 sm:mt-6")}>
         <LiquidMetalButton
           label="Find opportunities"
@@ -556,7 +536,6 @@ export function UnifiedSearch({
         />
       </div>
 
-      {/* 6. Helpful Example Guidance (Only shown when no valid search entered yet) */}
       {!isReady && (
         <p className="mt-2.5 sm:mt-3 text-[11.5px] sm:text-xs text-muted-foreground select-none">
           Try{" "}

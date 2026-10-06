@@ -79,6 +79,7 @@ export function TrendChart({ trend }: { trend: ScanResult["trend"] }) {
   const minVal = values.length ? Math.min(...values) : 0;
   const maxVal = values.length ? Math.max(...values) : 100;
   const spread = maxVal - minVal;
+  // Pad the domain so the sparkline has visual headroom and doesn't clip against card boundaries.
   const padBottom = Math.max(4, Math.round(spread * 0.2));
   const padTop = Math.max(6, Math.round(spread * 0.25));
   const yMin = Math.max(0, minVal - padBottom);

@@ -11,7 +11,7 @@ export const VERDICT_LABEL: Record<Verdict, string> = {
   weak: "Weak signal",
 };
 
-/* ---------------- Component Calculation Types ---------------- */
+
 
 export interface TrendSignal {
   score: number;
@@ -41,11 +41,11 @@ export interface GapSignalInput {
 export interface GapSignal {
   score: number;
   verdict: Verdict;
-  /** True when Trends data was missing and weights were redistributed. */
+  // True when Trends data was missing and scoring weights were redistributed.
   renormalized: boolean;
 }
 
-/* ---------------- Shared Zod Schemas & Entity Contracts ---------------- */
+
 
 export const scanRequestSchema = z.object({
   lat: z
