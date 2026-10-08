@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
@@ -51,6 +49,43 @@ export function EvidenceSheet({
     result.area.label.split(",")[0] ||
     "the area";
 
+  const [dragY, setDragY] = React.useState(0);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const touchStartY = React.useRef<number | null>(null);
+
+  const activeDragY = open ? dragY : 0;
+  const activeIsDragging = open ? isDragging : false;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) {
+      // Pull down with natural soft damping
+      setDragY(delta);
+    } else {
+      setDragY(0);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current !== null) {
+      const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+      setIsDragging(false);
+      touchStartY.current = null;
+      if (deltaY > 80) {
+        setDragY(0);
+        onClose();
+      } else {
+        setDragY(0);
+      }
+    }
+  };
+
   return (
     <div
       className={cn("fixed inset-0 z-50", !open && "pointer-events-none")}
@@ -60,7 +95,7 @@ export function EvidenceSheet({
         data-cuelume-close
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-200 ease-out touch-none",
+          "absolute inset-0 bg-black/45 backdrop-blur-[2px] transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] touch-none",
           open ? "opacity-100" : "opacity-0",
         )}
       />
@@ -69,12 +104,38 @@ export function EvidenceSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="evidence-sheet-title"
+        style={{
+          transform: activeDragY > 0 ? `translate3d(0, ${activeDragY}px, 0)` : undefined,
+          transition: activeIsDragging ? "none" : undefined,
+        }}
         className={cn(
-          "absolute top-0 right-0 flex h-full w-full max-w-lg md:max-w-xl flex-col border-l border-border/80 bg-background shadow-xl transition-transform duration-250 ease-out",
-          open ? "translate-x-0" : "translate-x-full",
+          "fixed z-50 flex flex-col bg-background transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          // Mobile: Drawer from bottom with refined elevation
+          "inset-x-0 bottom-0 top-auto h-[88dvh] max-h-[92dvh] w-full rounded-t-[26px] border-t border-border/80 border-x-0 border-b-0 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_rgba(0,0,0,0.7)]",
+          // Desktop: Slide-over sheet from right
+          "sm:top-0 sm:right-0 sm:bottom-auto sm:left-auto sm:h-full sm:max-w-lg md:max-w-xl sm:rounded-none sm:border-l sm:border-t-0 sm:border-border/80 sm:shadow-xl",
+          // Open / Closed translation states
+          open
+            ? "translate-y-0 sm:translate-y-0 sm:translate-x-0"
+            : "translate-y-full sm:translate-y-0 sm:translate-x-full",
         )}
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border/60 bg-background/95 backdrop-blur-sm px-6 py-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))]">
+        {/* Mobile drawer grab handle */}
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="flex justify-center pt-3 pb-1.5 sm:hidden shrink-0 cursor-grab active:cursor-grabbing select-none touch-pan-y"
+        >
+          <div className="h-1.25 w-12 rounded-full bg-muted-foreground/35 transition-colors" />
+        </div>
+
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="sticky top-0 z-10 flex items-start justify-between border-b border-border/60 bg-background/95 backdrop-blur-sm px-4.5 py-3 sm:px-6 sm:py-4 sm:pt-[max(1rem,env(safe-area-inset-top,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))]"
+        >
           <div className="min-w-0 pr-4">
             <h2 id="evidence-sheet-title" className="text-sm font-semibold text-foreground tracking-tight">Evidence &amp; analysis</h2>
             <p className="text-xs font-medium text-foreground/80 truncate mt-0.5">
@@ -96,7 +157,7 @@ export function EvidenceSheet({
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col gap-7 overflow-y-auto overscroll-contain px-6 py-6 pb-[max(1.75rem,env(safe-area-inset-bottom,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))] pl-[max(1.5rem,env(safe-area-inset-left,0px))] text-xs">
+        <div className="flex flex-1 flex-col gap-6 sm:gap-7 overflow-y-auto overscroll-contain px-4.5 sm:px-6 py-5 sm:py-6 pb-[max(2rem,env(safe-area-inset-bottom,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pl-[max(1.25rem,env(safe-area-inset-left,0px))] text-xs">
           <section className="flex flex-col gap-3">
             <div>
               <h3 className="font-semibold text-foreground tracking-tight text-sm">
