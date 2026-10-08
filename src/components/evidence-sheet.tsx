@@ -112,8 +112,8 @@ export function EvidenceSheet({
           "fixed z-50 flex flex-col bg-background transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
           // Mobile: Drawer from bottom with refined elevation
           "inset-x-0 bottom-0 top-auto h-[88dvh] max-h-[92dvh] w-full rounded-t-[26px] border-t border-border/80 border-x-0 border-b-0 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_rgba(0,0,0,0.7)]",
-          // Desktop: Slide-over sheet from right
-          "sm:top-0 sm:right-0 sm:bottom-auto sm:left-auto sm:h-full sm:max-w-lg md:max-w-xl sm:rounded-none sm:border-l sm:border-t-0 sm:border-border/80 sm:shadow-xl",
+          // Desktop: Slide-over sheet from right spanning the full viewport height
+          "sm:inset-y-0 sm:top-0 sm:bottom-0 sm:right-0 sm:left-auto sm:h-full sm:max-h-none sm:w-full sm:max-w-lg md:max-w-xl sm:rounded-none sm:border-l sm:border-t-0 sm:border-b-0 sm:border-border/80 sm:shadow-xl",
           // Open / Closed translation states
           open
             ? "translate-y-0 sm:translate-y-0 sm:translate-x-0"

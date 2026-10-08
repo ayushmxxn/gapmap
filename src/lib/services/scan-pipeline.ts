@@ -7,6 +7,7 @@ import {
   type TrendsTimelinePoint,
 } from "@/lib/serpapi";
 import { resolveCategory } from "@/lib/categories";
+import { isRelevantTheme } from "@/lib/theme-filter";
 import {
   SCAN_RADIUS_KM,
   CITY_DEFAULT_METRO_RADIUS_KM,
@@ -352,7 +353,10 @@ export async function executeScanPipeline(
     if (!themesWithheld) {
       for (const r of reviewsByTarget) {
         for (const t of r.data.topics) {
-          if (t.mentions >= MIN_MENTIONS_FOR_THEME) {
+          if (
+            t.mentions >= MIN_MENTIONS_FOR_THEME &&
+            isRelevantTheme(t.keyword, category)
+          ) {
             themes.push({
               keyword: t.keyword,
               mentions: t.mentions,
