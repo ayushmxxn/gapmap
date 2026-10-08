@@ -269,7 +269,7 @@ export function UnifiedSearch({
     <form
       ref={containerRef}
       onSubmit={handleSubmit}
-      className={cn("flex flex-col relative w-full sm:max-w-[496px]", className)}
+      className={cn("flex flex-col relative w-full sm:max-w-124", className)}
     >
       <label
         htmlFor="unified-search-input"
@@ -316,7 +316,7 @@ export function UnifiedSearch({
           }
           data-cuelume-type
           className={cn(
-            "h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#191b19] pl-10 pr-10 text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f3f4f3] placeholder:text-[#18181b]/45 dark:placeholder:text-[#949a94]/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_2px_4px_0_rgba(0,0,0,0.4)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1d201d] hover:border-black/[0.09] dark:hover:border-white/[0.13] outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#212421] focus-visible:border-black/[0.12] dark:focus-visible:border-white/[0.18] focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.4)]",
+            "h-11.25 w-full rounded-2xl border border-black/6 dark:border-white/8 bg-[#f4f4f6] dark:bg-[#191b19] pl-10 pr-10 text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f3f4f3] placeholder:text-[#18181b]/45 dark:placeholder:text-[#949a94]/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_2px_4px_0_rgba(0,0,0,0.4)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1d201d] hover:border-black/9 dark:hover:border-white/13 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#212421] focus-visible:border-black/12 dark:focus-visible:border-white/18 focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.4)]",
             showValidation && !isReady && "border-amber-500/50 ring-2 ring-amber-500/25 dark:border-amber-400/50 dark:ring-amber-400/25",
           )}
         />
@@ -337,7 +337,7 @@ export function UnifiedSearch({
             id="location-autocomplete-list"
             role="listbox"
             aria-label="Location suggestions"
-            className="absolute top-full left-0 right-0 z-50 mt-1.5 max-h-56 overflow-y-auto overscroll-contain rounded-[16px] border border-black/[0.06] dark:border-white/10 bg-[#f4f4f6]/98 dark:bg-[#1a1c1a]/98 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.04)] dark:shadow-[0_16px_48px_-8px_rgba(0,0,0,0.7)] backdrop-blur-md"
+            className="absolute top-full left-0 right-0 z-50 mt-1.5 max-h-56 overflow-y-auto overscroll-contain rounded-2xl border border-black/6 dark:border-white/10 bg-[#f4f4f6]/98 dark:bg-[#1a1c1a]/98 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.04)] dark:shadow-[0_16px_48px_-8px_rgba(0,0,0,0.7)] backdrop-blur-md"
           >
             {suggestions.map((item, idx) => {
               const isSelected = activeSuggestionIndex === idx;
@@ -443,7 +443,7 @@ export function UnifiedSearch({
       {/* 4. Compact Confirmation State: shown naturally only when feedback/location exists */}
       {hasFeedback && (
         <div
-          className="mt-3 min-h-[22px] flex items-center text-xs tracking-tight animate-in fade-in duration-150"
+          className="mt-3 min-h-5.5 flex items-center text-xs tracking-tight animate-in fade-in duration-150"
           aria-live="polite"
         >
           {/* Valid & Ready State */}

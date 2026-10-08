@@ -148,7 +148,7 @@ export function BusinessPickerModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-[460px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[520px] flex flex-col rounded-[22px] border border-border bg-background p-4 sm:p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl animate-in zoom-in-95 duration-150 overflow-hidden"
+        className="w-full max-w-115 max-h-[calc(100dvh-1.5rem)] sm:max-h-130 flex flex-col rounded-[22px] border border-border bg-background p-4 sm:p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl animate-in zoom-in-95 duration-150 overflow-hidden"
       >
         {/* Top Header */}
         <div className="flex items-center justify-between pb-2.5 sm:pb-3 shrink-0">
@@ -193,7 +193,7 @@ export function BusinessPickerModal({
             autoCapitalize="none"
             spellCheck={false}
             enterKeyHint="search"
-            className="h-[45px] w-full rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-[#f4f4f6] dark:bg-[#191b19] pl-10 pr-10 text-[16px] sm:text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f3f4f3] placeholder:text-[#18181b]/45 dark:placeholder:text-[#949a94]/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_2px_4px_0_rgba(0,0,0,0.4)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1d201d] hover:border-black/[0.09] dark:hover:border-white/[0.13] outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#212421] focus-visible:border-black/[0.12] dark:focus-visible:border-white/[0.18] focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.4)]"
+            className="h-11.25 w-full rounded-2xl border border-black/6 dark:border-white/8 bg-[#f4f4f6] dark:bg-[#191b19] pl-10 pr-10 text-[16px] sm:text-[14px] leading-5 font-normal text-[#18181b] dark:text-[#f3f4f3] placeholder:text-[#18181b]/45 dark:placeholder:text-[#949a94]/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_2px_4px_0_rgba(0,0,0,0.4)] transition-all duration-150 hover:bg-[#efeff2] dark:hover:bg-[#1d201d] hover:border-black/9 dark:hover:border-white/13 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-[#f8f8fa] dark:focus-visible:bg-[#212421] focus-visible:border-black/12 dark:focus-visible:border-white/18 focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_2px_4px_0_rgba(0,0,0,0.06)] dark:focus-visible:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),inset_0_2px_4px_0_rgba(0,0,0,0.4)]"
           />
           {search.length > 0 && (
             <button
@@ -309,7 +309,7 @@ export function BusinessPickerModal({
                       data-cuelume-select
                       onClick={() => handleSelect(item.label)}
                       className={cn(
-                        "min-h-[42px] px-3 py-2 rounded-xl flex items-center justify-center text-center text-xs sm:text-[13px] font-medium transition-all cursor-pointer select-none active:scale-[0.98]",
+                        "min-h-10.5 px-3 py-2 rounded-xl flex items-center justify-center text-center text-xs sm:text-[13px] font-medium transition-all cursor-pointer select-none active:scale-[0.98]",
                         isSelected
                           ? "bg-foreground text-background shadow-[0_1px_2.5px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
                           : "bg-muted hover:bg-muted/80 text-foreground",
@@ -365,7 +365,7 @@ export function BusinessPickerModal({
                       key={group.name}
                       type="button"
                       onClick={() => setSelectedCategory(group)}
-                      className="min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-between text-left bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer group active:scale-[0.98]"
+                      className="min-h-11 h-auto py-2.5 px-3 rounded-xl flex items-center justify-between text-left bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer group active:scale-[0.98]"
                     >
                       <span className="text-xs sm:text-[13px] font-medium leading-snug pr-1">
                         {group.name}

@@ -146,7 +146,7 @@ export function ScanStudio() {
       : areaLabel.split(",")[0]);
 
   return (
-    <div className="flex min-h-screen min-h-dvh flex-col bg-background text-foreground">
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
       {status !== "idle" && (
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] border-b border-border/40">
           <div className="mx-auto flex w-full max-w-7xl xl:max-w-[1380px] 2xl:max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:py-3 md:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
