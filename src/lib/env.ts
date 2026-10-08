@@ -39,9 +39,41 @@ function readServerEnv(): ServerEnv {
 }
 
 export const clientEnv = readClientEnv();
-// Prevent browser bundles from trying to read server-only secrets.
-export const serverEnv =
-  typeof window === "undefined" ? readServerEnv() : (clientEnv as ServerEnv);
+// Prevent browser bundles from trying to read server-only secrets,
+// while dynamically resolving server secrets (such as Cloudflare Worker secrets) at runtime.
+export const serverEnv: ServerEnv =
+  typeof window === "undefined"
+    ? new Proxy({} as ServerEnv, {
+        get(_target, prop) {
+          if (prop === "SERPAPI_KEY") {
+            const globalVal =
+              typeof globalThis !== "undefined" && "SERPAPI_KEY" in globalThis
+                ? String(
+                    (globalThis as unknown as Record<string, unknown>)
+                      .SERPAPI_KEY || "",
+                  )
+                : "";
+            const processVal =
+              typeof process !== "undefined" && process?.env
+                ? process.env.SERPAPI_KEY || process.env.SERPAPI_API_KEY || ""
+                : "";
+            const resolved = (processVal || globalVal || "").trim();
+            return resolved;
+          }
+          const parsed = readServerEnv();
+          return parsed[prop as keyof ServerEnv];
+        },
+        has(_target, prop) {
+          return prop === "SERPAPI_KEY" || prop in readServerEnv();
+        },
+        ownKeys() {
+          return Reflect.ownKeys(readServerEnv());
+        },
+        getOwnPropertyDescriptor(_target, prop) {
+          return Reflect.getOwnPropertyDescriptor(readServerEnv(), prop);
+        },
+      })
+    : (clientEnv as ServerEnv);
 
 // Resolves canonical base URL for OpenGraph and sitemaps.
 export function getSiteUrl(): string {

@@ -28,4 +28,14 @@ describe("Environment & URL Resolution", () => {
     expect("SERPAPI_KEY" in serverEnv).toBe(true);
     expect(typeof serverEnv.SERPAPI_KEY).toBe("string");
   });
+
+  it("dynamically resolves runtime updates to SERPAPI_KEY on the server", () => {
+    const original = process.env.SERPAPI_KEY;
+    try {
+      process.env.SERPAPI_KEY = "test_dynamic_secret_key";
+      expect(serverEnv.SERPAPI_KEY).toBe("test_dynamic_secret_key");
+    } finally {
+      process.env.SERPAPI_KEY = original;
+    }
+  });
 });
