@@ -29,3 +29,50 @@ export function pinColor(rating: number | undefined): string {
 export function competitorKey(c: Competitor): string {
   return `${c.title}-${c.lat}-${c.lng}`;
 }
+
+/**
+ * Builds a direct Google Maps URL for a place or business.
+ * Prefers the Google Maps place ID when available (universal URL query_place_id);
+ * otherwise builds a search query URL using the business name and address.
+ * Falls back to coordinates if title/address are missing, and returns null if no valid data exists.
+ */
+export function buildGoogleMapsUrl(place: {
+  title?: string;
+  address?: string;
+  placeId?: string;
+  lat?: number;
+  lng?: number;
+}): string | null {
+  const cleanTitle = (place.title ?? "").trim();
+  const cleanAddress = (place.address ?? "").trim();
+  const placeId = (place.placeId ?? "").trim();
+
+  const queryParts = [cleanTitle, cleanAddress].filter(Boolean);
+  let query = queryParts.join(", ").trim();
+
+  if (
+    !query &&
+    place.lat != null &&
+    place.lng != null &&
+    !Number.isNaN(place.lat) &&
+    !Number.isNaN(place.lng)
+  ) {
+    query = `${place.lat},${place.lng}`;
+  }
+
+  if (!query && !placeId) {
+    return null;
+  }
+
+  const effectiveQuery = query || "Location";
+  const params = new URLSearchParams({
+    api: "1",
+    query: effectiveQuery,
+  });
+
+  if (placeId) {
+    params.set("query_place_id", placeId);
+  }
+
+  return `https://www.google.com/maps/search/?${params.toString()}`;
+}

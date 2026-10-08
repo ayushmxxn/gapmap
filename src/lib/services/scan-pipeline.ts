@@ -333,6 +333,7 @@ export async function executeScanPipeline(
     );
     const competitors: Competitor[] = geoPlaces.map((p) => ({
       title: p.title,
+      placeId: p.place_id ?? p.data_id,
       rating: p.rating,
       reviews: p.reviews,
       address: p.address,

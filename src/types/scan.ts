@@ -83,6 +83,7 @@ export type LedgerEntry = z.infer<typeof ledgerEntrySchema>;
 
 export const competitorSchema = z.object({
   title: z.string(),
+  placeId: z.string().optional(),
   rating: z.number().optional(),
   reviews: z.number().optional(),
   address: z.string().optional(),

@@ -17,7 +17,7 @@ import type { Competitor } from "@/lib/scoring";
 import { formatReviewCount } from "@/lib/result-utils";
 import { reverseGeocode } from "@/lib/mapbox-geocoding";
 
-import { getOptimalGlobeZoom, competitorKey, pinColor } from "@/lib/map-utils";
+import { getOptimalGlobeZoom, competitorKey, pinColor, buildGoogleMapsUrl } from "@/lib/map-utils";
 import { CompetitorMarker } from "@/components/competitor-marker";
 
 type Projection = "globe" | "mercator";
@@ -76,21 +76,98 @@ export function DiscoveryMap({
     projRef.current = projection;
   }, [projection]);
 
-  const [selected, setSelected] = React.useState<Competitor | null>(null);
-  const handleSelectCompetitor = React.useCallback((c: Competitor) => {
-    setSelected(c);
+  const [pinned, setPinned] = React.useState<Competitor | null>(null);
+  const [hovered, setHovered] = React.useState<Competitor | null>(null);
+  const pinnedRef = React.useRef<Competitor | null>(null);
+  React.useEffect(() => {
+    pinnedRef.current = pinned;
+  }, [pinned]);
+
+  const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearCloseTimer = React.useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
   }, []);
 
   React.useEffect(() => {
-    if (!selected) return;
+    return () => {
+      clearCloseTimer();
+    };
+  }, [clearCloseTimer]);
+
+  const activeCompetitor = hovered ?? pinned;
+  const activeGoogleMapsUrl = React.useMemo(
+    () => (activeCompetitor ? buildGoogleMapsUrl(activeCompetitor) : null),
+    [activeCompetitor],
+  );
+
+  const handleMarkerHover = React.useCallback(
+    (c: Competitor) => {
+      clearCloseTimer();
+      setHovered(c);
+    },
+    [clearCloseTimer],
+  );
+
+  const handleMarkerLeave = React.useCallback(
+    (c: Competitor) => {
+      if (
+        pinnedRef.current &&
+        competitorKey(pinnedRef.current) === competitorKey(c)
+      ) {
+        return;
+      }
+      clearCloseTimer();
+      closeTimerRef.current = setTimeout(() => {
+        setHovered(null);
+      }, 220);
+    },
+    [clearCloseTimer],
+  );
+
+  const handlePopupPointerEnter = React.useCallback(() => {
+    clearCloseTimer();
+  }, [clearCloseTimer]);
+
+  const handlePopupPointerLeave = React.useCallback(() => {
+    if (pinnedRef.current) {
+      return;
+    }
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => {
+      setHovered(null);
+    }, 220);
+  }, [clearCloseTimer]);
+
+  const handleSelectCompetitor = React.useCallback(
+    (c: Competitor) => {
+      clearCloseTimer();
+      setPinned(c);
+      setHovered(c);
+    },
+    [clearCloseTimer],
+  );
+
+  const handleClosePopup = React.useCallback(() => {
+    clearCloseTimer();
+    setPinned(null);
+    setHovered(null);
+  }, [clearCloseTimer]);
+
+  React.useEffect(() => {
+    if (!activeCompetitor) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setSelected(null);
+        clearCloseTimer();
+        setPinned(null);
+        setHovered(null);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected]);
+  }, [activeCompetitor, clearCloseTimer]);
 
   const [dimensions, setDimensions] = React.useState<{ width: number; height: number } | null>(null);
   const [mapError, setMapError] = React.useState(false);
@@ -479,9 +556,17 @@ export function DiscoveryMap({
           }}
           onDragStart={() => {
             hasInteractedRef.current = true;
+            if (!pinnedRef.current) {
+              clearCloseTimer();
+              setHovered(null);
+            }
           }}
           onZoomStart={() => {
             hasInteractedRef.current = true;
+            if (!pinnedRef.current) {
+              clearCloseTimer();
+              setHovered(null);
+            }
           }}
           onPitchStart={() => {
             hasInteractedRef.current = true;
@@ -559,50 +644,72 @@ export function DiscoveryMap({
                   key={competitorKey(c)}
                   competitor={c}
                   isSelected={Boolean(
-                    selected && competitorKey(selected) === competitorKey(c),
+                    activeCompetitor &&
+                      competitorKey(activeCompetitor) === competitorKey(c),
                   )}
                   onSelect={handleSelectCompetitor}
+                  onHover={handleMarkerHover}
+                  onLeave={handleMarkerLeave}
                 />
               ),
           )}
 
-          {selected && selected.lat != null && selected.lng != null && (
-            <Popup
-              longitude={selected.lng}
-              latitude={selected.lat}
-              offset={12}
-              maxWidth="240px"
-              className="gapmap-popup"
-              onClose={() => setSelected(null)}
-            >
-              <div className="flex flex-col gap-0.5">
-                <p className="text-sm font-semibold tracking-tight text-foreground truncate">
-                  {selected.title.split("|")[0]?.trim() ?? selected.title}
-                </p>
-                <p className="text-xs">
-                  <span
-                    className="font-medium"
-                    style={{ color: pinColor(selected.rating) }}
-                  >
-                    {selected.rating != null
-                      ? `${selected.rating.toFixed(1)}★`
-                      : "Unrated"}
-                  </span>
-                  {selected.reviews != null && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {formatReviewCount(selected.reviews)} reviews
-                    </span>
-                  )}
-                </p>
-                {selected.address && (
-                  <p className="text-[11px] text-muted-foreground line-clamp-1">
-                    {selected.address}
+          {activeCompetitor &&
+            activeCompetitor.lat != null &&
+            activeCompetitor.lng != null && (
+              <Popup
+                longitude={activeCompetitor.lng}
+                latitude={activeCompetitor.lat}
+                offset={12}
+                maxWidth="240px"
+                className="gapmap-popup"
+                onClose={handleClosePopup}
+              >
+                <div
+                  className="flex flex-col gap-0.5"
+                  onPointerEnter={handlePopupPointerEnter}
+                  onPointerLeave={handlePopupPointerLeave}
+                >
+                  <p className="text-sm font-semibold tracking-tight text-foreground truncate">
+                    {activeCompetitor.title.split("|")[0]?.trim() ??
+                      activeCompetitor.title}
                   </p>
-                )}
-              </div>
-            </Popup>
-          )}
+                  <p className="text-xs">
+                    <span
+                      className="font-medium"
+                      style={{ color: pinColor(activeCompetitor.rating) }}
+                    >
+                      {activeCompetitor.rating != null
+                        ? `${activeCompetitor.rating.toFixed(1)}★`
+                        : "Unrated"}
+                    </span>
+                    {activeCompetitor.reviews != null && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {formatReviewCount(activeCompetitor.reviews)} reviews
+                      </span>
+                    )}
+                  </p>
+                  {(activeCompetitor.placeType || activeCompetitor.address) && (
+                    <p className="text-[11px] text-muted-foreground line-clamp-1">
+                      {[activeCompetitor.placeType, activeCompetitor.address]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {activeGoogleMapsUrl && (
+                    <a
+                      href={activeGoogleMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                    >
+                      Open in Google Maps ↗
+                    </a>
+                  )}
+                </div>
+              </Popup>
+            )}
         </Map>
       ) : mapError ? (
         <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground bg-muted/20 rounded-2xl border border-border/40">
