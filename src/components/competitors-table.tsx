@@ -98,7 +98,7 @@ export function CompetitorsTable({
           type="button"
           aria-expanded={isExpanded}
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-0.5 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors cursor-pointer self-start py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm"
+          className="mt-0.5 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors cursor-pointer self-start py-1 outline-none"
         >
           <span>
             {isExpanded
@@ -119,7 +119,7 @@ export function CompetitorsTable({
 
       {showSamplingNote && (
         <details className="group rounded-xl border border-border/70 bg-card p-3.5 text-xs shadow-2xs">
-          <summary className="flex cursor-pointer items-center justify-between font-medium text-muted-foreground hover:text-foreground select-none outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm">
+          <summary className="flex cursor-pointer items-center justify-between font-medium text-muted-foreground hover:text-foreground select-none outline-none">
             <span>Why these places?</span>
             <HugeiconsIcon
               icon={ArrowDown01Icon}

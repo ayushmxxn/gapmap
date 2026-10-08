@@ -91,7 +91,7 @@
 @layer base {
   *, ::before, ::after {
     box-sizing: border-box;
-    @apply border-border outline-ring/50;
+    @apply border-border outline-none;
   }
   html {
     overflow-x: hidden;
@@ -110,9 +110,13 @@
   }
 }
 
-:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+:focus,
+:focus-visible,
+*:focus,
+*:focus-visible {
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

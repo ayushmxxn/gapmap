@@ -526,7 +526,7 @@ export function DiscoveryMap({
                     hasInteractedRef.current = true;
                     setArea(p.lat, p.lng, p.label);
                   }}
-                  className="flex cursor-pointer flex-col items-center gap-1 bg-transparent border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:rounded-full"
+                  className="flex cursor-pointer flex-col items-center gap-1 bg-transparent border-0 p-0 outline-none"
                 >
                   <span className="block size-2.5 rounded-full bg-primary ring-4 ring-primary/20 transition-transform hover:scale-125" />
                   <span className="rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap text-foreground backdrop-blur">
@@ -642,7 +642,7 @@ export function DiscoveryMap({
               essential: true,
             });
           }}
-          className="absolute top-3 right-3 flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1.5 text-xs font-medium shadow backdrop-blur hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute top-3 right-3 flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1.5 text-xs font-medium shadow backdrop-blur hover:bg-muted outline-none"
         >
           <HugeiconsIcon icon={GlobalIcon} size={14} strokeWidth={2} />
           <span>Globe</span>

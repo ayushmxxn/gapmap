@@ -545,7 +545,7 @@ export function UnifiedSearch({
               setQuery("Gym in Mumbai");
               if (showValidation) setShowValidation(false);
             }}
-            className="text-foreground font-medium underline underline-offset-3 decoration-muted-foreground/50 hover:decoration-foreground cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xs"
+            className="text-foreground font-medium underline underline-offset-3 decoration-muted-foreground/50 hover:decoration-foreground cursor-pointer transition-colors outline-none"
           >
             “Gym in Mumbai”
           </button>{" "}
@@ -556,7 +556,7 @@ export function UnifiedSearch({
               setQuery("Cafe in Koramangala");
               if (showValidation) setShowValidation(false);
             }}
-            className="text-foreground font-medium underline underline-offset-3 decoration-muted-foreground/50 hover:decoration-foreground cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xs"
+            className="text-foreground font-medium underline underline-offset-3 decoration-muted-foreground/50 hover:decoration-foreground cursor-pointer transition-colors outline-none"
           >
             “Cafe in Koramangala”
           </button>

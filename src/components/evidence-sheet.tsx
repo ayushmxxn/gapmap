@@ -90,7 +90,7 @@ export function EvidenceSheet({
             data-cuelume-close
             onClick={onClose}
             aria-label="Close evidence panel"
-            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 cursor-pointer shrink-0 mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 cursor-pointer shrink-0 mt-0.5 outline-none"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={2} />
           </button>

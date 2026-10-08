@@ -338,7 +338,7 @@ export const LiquidMetalButton = React.memo(function LiquidMetalButton({
               overflow: "hidden",
               borderRadius: "100px",
             }}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="outline-none"
             aria-label={label}
           >
             {ripples.map((ripple) => (

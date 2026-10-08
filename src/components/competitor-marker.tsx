@@ -47,7 +47,7 @@ export const CompetitorMarker = React.memo(function CompetitorMarker({
           }
         }}
         className={cn(
-          "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow transition-transform cursor-pointer outline-none",
           isSelected && "scale-125 ring-2 ring-white dark:ring-black",
         )}
         style={{ backgroundColor: pinColor(competitor.rating) }}
