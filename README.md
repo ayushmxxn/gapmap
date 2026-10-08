@@ -4,13 +4,13 @@
 
 A market opportunity scanner that finds underserved business gaps using local competition, search trends, and customer reviews.
 
-[Live Demo](https://gapmap.app)
+[Live Demo](https://gapmap.ayushmxxn.workers.dev)
 
 ## What it does
 
 GapMap helps entrepreneurs and operators evaluate local market demand before opening a business.
 
-Instead of guessing where to open a cafe, clinic, or gym, GapMap analyzes nearby competitors, review sentiment, and search interest for any neighborhood. It summarizes the findings into an intuitive opportunity score so you can see where supply is falling short of demand.
+Instead of guessing where to open a cafe, clinic, or gym, GapMap analyzes nearby competitors, review sentiment, and search interest for any neighborhood. It summarizes the findings into an intuitive Gap Signal so you can see where supply is falling short of demand.
 
 ## How it works
 
@@ -56,15 +56,17 @@ Mock mode works out of the box with deterministic sample data. To connect live G
 
 The Gap Signal (0–100) weighs four core market factors:
 
-- **Demand**: Measures search interest and 12-month growth trends to see if interest in the category is expanding.
-- **Competition**: Measures competitor count and density. Fewer nearby competitors yields a higher gap score.
-- **Reviews**: Evaluates local transaction volume and engagement based on total review activity.
-- **Customer experience**: Looks at low ratings and recurring complaints in existing reviews to spot service quality gaps.
+- **Demand (35%)**: Measures 12-month search interest trajectory and growth trends to see if interest in the category is expanding.
+- **Customer experience (30%)**: Spots unmet customer satisfaction using low competitor ratings (< 4.0★) and recurring complaints in customer reviews.
+- **Competition (25%)**: Evaluates competitor count, density, and spatial spread across the area. Fewer nearby competitors yields a higher Gap Signal.
+- **Review volume (10%)**: Measures total review activity to evaluate overall market engagement and transaction volume.
 
-Scores fall into three general ranges:
-- **75–100 (Strong Signal)**: High demand, low competition, or clear customer dissatisfaction with current options.
-- **50–74 (Moderate Signal)**: Balanced market with steady demand and existing competitors.
-- **0–49 (Weak Signal)**: Saturated market with dominant incumbents or declining search interest.
+If search trends are unavailable for a specific location, weights are automatically renormalized across the remaining factors.
+
+Scores map to three clear verdicts:
+- **75–100 (Strong opportunity)**: High demand, low competition, or clear customer dissatisfaction with current options.
+- **50–74 (Good opportunity)**: Balanced market with steady demand and existing competitors.
+- **0–49 (Low opportunity)**: Saturated market with dominant incumbents or declining search interest.
 
 ## Tech stack
 
