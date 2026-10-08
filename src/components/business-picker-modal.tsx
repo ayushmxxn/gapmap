@@ -148,7 +148,7 @@ export function BusinessPickerModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-[460px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[520px] flex flex-col rounded-[22px] border border-black/[0.08] dark:border-white/10 bg-background p-4 sm:p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl animate-in zoom-in-95 duration-150 overflow-hidden"
+        className="w-full max-w-[460px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[520px] flex flex-col rounded-[22px] border border-border bg-background p-4 sm:p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl animate-in zoom-in-95 duration-150 overflow-hidden"
       >
         {/* Top Header */}
         <div className="flex items-center justify-between pb-2.5 sm:pb-3 shrink-0">
@@ -163,7 +163,7 @@ export function BusinessPickerModal({
             data-cuelume-close
             aria-label="Close dialog"
             onClick={handleClose}
-            className="flex size-7 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground hover:bg-[#f2f2f2] dark:hover:bg-[#1a1c1a] transition-colors cursor-pointer active:scale-95"
+            className="flex size-7 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={15} strokeWidth={2} />
           </button>
@@ -223,7 +223,7 @@ export function BusinessPickerModal({
                   type="button"
                   data-cuelume-select
                   onClick={() => handleSelect(search.trim())}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#f2f2f2] hover:bg-[#e8e8e8] text-[#18181b] dark:bg-[#1a1c1a] dark:hover:bg-[#232623] dark:text-[#d2d6d2] text-xs sm:text-sm font-medium transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs sm:text-sm font-medium transition-colors cursor-pointer"
                 >
                   <span className="truncate">
                     Use &ldquo;<span className="font-semibold">{search.trim()}</span>&rdquo; as custom business
@@ -249,8 +249,8 @@ export function BusinessPickerModal({
                         className={cn(
                           "p-2.5 rounded-xl flex flex-col items-start justify-center text-left transition-all cursor-pointer select-none active:scale-[0.98]",
                           isSelected
-                            ? "bg-[#18181B] text-white shadow-[0_1px_2.5px_rgba(0,0,0,0.18)] dark:bg-[#f3f4f3] dark:text-[#131413]"
-                            : "bg-[#f2f2f2] hover:bg-[#e8e8e8] text-[#18181b] dark:bg-[#1a1c1a] dark:hover:bg-[#232623] dark:text-[#d2d6d2]",
+                            ? "bg-foreground text-background shadow-[0_1px_2.5px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+                            : "bg-muted hover:bg-muted/80 text-foreground",
                         )}
                       >
                         <span className="text-xs sm:text-[13px] font-medium truncate w-full">
@@ -259,7 +259,7 @@ export function BusinessPickerModal({
                         <span
                           className={cn(
                             "text-[10px] truncate w-full mt-0.5",
-                            isSelected ? "text-white/75 dark:text-[#131413]/75" : "text-muted-foreground",
+                            isSelected ? "text-background/80" : "text-muted-foreground",
                           )}
                         >
                           {item.groupName}
@@ -311,8 +311,8 @@ export function BusinessPickerModal({
                       className={cn(
                         "min-h-[42px] px-3 py-2 rounded-xl flex items-center justify-center text-center text-xs sm:text-[13px] font-medium transition-all cursor-pointer select-none active:scale-[0.98]",
                         isSelected
-                          ? "bg-[#18181B] text-white shadow-[0_1px_2.5px_rgba(0,0,0,0.18)] dark:bg-[#f3f4f3] dark:text-[#131413]"
-                          : "bg-[#f2f2f2] hover:bg-[#e8e8e8] text-[#18181b]/90 hover:text-[#18181b] dark:bg-[#1a1c1a] dark:hover:bg-[#232623] dark:text-[#d2d6d2] dark:hover:text-[#f3f4f3]",
+                          ? "bg-foreground text-background shadow-[0_1px_2.5px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+                          : "bg-muted hover:bg-muted/80 text-foreground",
                       )}
                     >
                       <span className="leading-snug">{item.label}</span>
@@ -365,7 +365,7 @@ export function BusinessPickerModal({
                       key={group.name}
                       type="button"
                       onClick={() => setSelectedCategory(group)}
-                      className="min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-between text-left bg-[#f2f2f2] hover:bg-[#e8e8e8] text-[#18181b] dark:bg-[#1a1c1a] dark:hover:bg-[#232623] dark:text-[#d2d6d2] transition-all cursor-pointer group active:scale-[0.98]"
+                      className="min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-between text-left bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer group active:scale-[0.98]"
                     >
                       <span className="text-xs sm:text-[13px] font-medium leading-snug pr-1">
                         {group.name}

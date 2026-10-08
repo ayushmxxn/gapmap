@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "next-themes";
 import Map, { Marker, Popup, Source, Layer, type MapRef } from "react-map-gl/mapbox";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GlobalIcon } from "@hugeicons/core-free-icons";
@@ -62,12 +61,6 @@ export function DiscoveryMap({
 }) {
   const isLocal = mode === "local";
   const { lat, lng, setArea } = useAppStore();
-  const { resolvedTheme } = useTheme();
-  const mounted = React.useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
 
   const mapRef = React.useRef<MapRef>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -102,7 +95,6 @@ export function DiscoveryMap({
   const [dimensions, setDimensions] = React.useState<{ width: number; height: number } | null>(null);
   const [mapError, setMapError] = React.useState(false);
 
-  const isDark = mounted && resolvedTheme === "dark";
   const mapStyle = MAPBOX_STYLE;
   const isValidCenter =
     Number.isFinite(lat) &&
@@ -178,27 +170,44 @@ export function DiscoveryMap({
     [isLocal],
   );
 
-  // Re-apply projection and atmosphere settings whenever the style reloads (mount, theme toggle).
+  // Re-apply projection and atmosphere settings whenever the style reloads or theme switches.
+  // MutationObserver synchronizes Mapbox atmosphere in the exact same microtask as the DOM class change.
   React.useEffect(() => {
     const map = mapRef.current?.getMap();
     if (!map) return;
     let cancelled = false;
-    const onStyleLoad = () => {
-      if (!cancelled) applySettings(isDark);
+
+    const syncTheme = () => {
+      if (cancelled) return;
+      const isDarkNow = document.documentElement.classList.contains("dark");
+      applySettings(isDarkNow);
     };
+
+    const onStyleLoad = () => {
+      syncTheme();
+    };
+
     if (map.isStyleLoaded()) {
-      applySettings(isDark);
+      syncTheme();
     } else {
       map.once("style.load", onStyleLoad);
     }
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
     return () => {
       cancelled = true;
+      observer.disconnect();
       (map as unknown as { off?: (event: string, fn: () => void) => void }).off?.(
         "style.load",
         onStyleLoad,
       );
     };
-  }, [mapStyle, isDark, applySettings]);
+  }, [mapStyle, applySettings]);
 
   React.useEffect(() => {
     const el = containerRef.current;
@@ -399,7 +408,7 @@ export function DiscoveryMap({
           keyboard={true}
           onError={() => setMapError(true)}
           onLoad={() => {
-            applySettings(isDark);
+            applySettings(document.documentElement.classList.contains("dark"));
             const map = mapRef.current?.getMap();
             if (map) {
               const handlers = (

@@ -42,7 +42,7 @@ export function ThemesList({
         {aggregatedThemes.map((t) => (
           <span
             key={t.keyword}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#f2f2f2] dark:bg-muted/60 px-3 py-1 text-xs text-foreground transition-colors hover:bg-[#eaeaea] dark:hover:bg-muted"
+            className="inline-flex items-center gap-1.5 rounded-full bg-muted/70 hover:bg-muted px-3 py-1 text-xs text-foreground"
           >
             <span className="font-medium capitalize">{t.keyword}</span>
             <span className="text-[11px] font-normal text-muted-foreground tabular-nums">

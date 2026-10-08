@@ -124,7 +124,7 @@ export function SignalSummary({ result, onOpenEvidence }: SignalSummaryProps) {
           onClick={onOpenEvidence}
           variant="ghost"
           size="sm"
-          className="h-8.5 rounded-lg px-3.5 text-xs font-medium cursor-pointer border-0 shadow-none bg-[#f2f2f2] hover:bg-[#e8e8e8] text-foreground dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-all active:scale-[0.98] shrink-0 gap-1.5 self-start sm:self-auto"
+          className="h-8.5 rounded-lg px-3.5 text-xs font-medium cursor-pointer border-0 shadow-none bg-muted hover:bg-muted/80 text-foreground active:scale-[0.98] shrink-0 gap-1.5 self-start sm:self-auto"
         >
           <span>See the evidence</span>
           <HugeiconsIcon icon={ArrowRight01Icon} size={13} strokeWidth={2} />

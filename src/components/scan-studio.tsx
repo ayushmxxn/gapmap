@@ -148,7 +148,7 @@ export function ScanStudio() {
   return (
     <div className="flex min-h-screen min-h-dvh flex-col bg-background text-foreground">
       {status !== "idle" && (
-        <header className="sticky top-0 z-10 bg-white/95 dark:bg-card/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] transition-colors">
+        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)] border-b border-border/40">
           <div className="mx-auto flex w-full max-w-7xl xl:max-w-[1380px] 2xl:max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:py-3 md:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
             <div className="flex items-center gap-3 min-w-0">
               <button
@@ -174,7 +174,7 @@ export function ScanStudio() {
                   priority
                   unoptimized
                 />
-                <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#111827] dark:text-foreground">
+                <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
                   GapMap
                 </span>
               </button>
@@ -190,7 +190,8 @@ export function ScanStudio() {
               </div>
             </div>
 
-            <div className="flex items-center shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0">
+              <ThemeToggle />
               <Button
                 type="button"
                 data-cuelume-tap
@@ -204,7 +205,7 @@ export function ScanStudio() {
                   setCategoryId("");
                   window.history.replaceState(null, "", "/");
                 }}
-                className="h-8.5 rounded-lg px-3.5 text-xs font-medium cursor-pointer border-0 shadow-none bg-[#f2f2f2] hover:bg-[#e8e8e8] text-foreground dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-all active:scale-[0.98]"
+                className="h-8.5 rounded-lg px-3.5 text-xs font-medium cursor-pointer border-0 shadow-none bg-muted hover:bg-muted/80 text-foreground active:scale-[0.98]"
               >
                 New scan
               </Button>
@@ -233,7 +234,7 @@ export function ScanStudio() {
                   priority
                   unoptimized
                 />
-                <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#111827] dark:text-foreground">
+                <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
                   GapMap
                 </span>
               </div>
@@ -284,55 +285,55 @@ export function ScanStudio() {
               Analyzing neighborhood market, competition, and search demand…
             </div>
             <div className="grid gap-5 lg:gap-6 xl:gap-7 lg:grid-cols-[1fr_1.2fr] items-stretch w-full lg:h-[clamp(440px,calc(100dvh-6.5rem),520px)]">
-              <div className="flex flex-col justify-between rounded-2xl border border-neutral-200 dark:border-border bg-white dark:bg-card p-6 sm:p-7 xl:p-8 shadow-xs animate-pulse">
+              <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-7 xl:p-8 shadow-xs animate-pulse">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3.5 w-28 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
-                    <div className="size-1 rounded-full bg-[#d4d4d4] dark:bg-zinc-700" />
-                    <div className="h-3.5 w-16 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                    <div className="h-3.5 w-28 rounded bg-muted" />
+                    <div className="size-1 rounded-full bg-muted-foreground/30" />
+                    <div className="h-3.5 w-16 rounded bg-muted" />
                   </div>
 
                   <div className="mt-4 sm:mt-5 flex items-baseline gap-3.5">
-                    <div className="h-14 sm:h-16 w-24 rounded-xl bg-[#e5e5e5] dark:bg-zinc-800" />
-                    <div className="h-6 w-28 rounded-full bg-[#e8e8e8] dark:bg-zinc-800" />
+                    <div className="h-14 sm:h-16 w-24 rounded-xl bg-muted" />
+                    <div className="h-6 w-28 rounded-full bg-muted" />
                   </div>
 
                   <div className="mt-3 sm:mt-4 space-y-2">
-                    <div className="h-3.5 w-11/12 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
-                    <div className="h-3.5 w-3/4 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
+                    <div className="h-3.5 w-11/12 rounded bg-muted" />
+                    <div className="h-3.5 w-3/4 rounded bg-muted" />
                   </div>
 
-                  <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-neutral-200 dark:border-border/60">
+                  <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-border/60">
                     <div className="grid grid-cols-3 gap-3 sm:gap-4">
                       <div className="space-y-1.5">
-                        <div className="h-2.5 w-12 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
-                        <div className="h-4 w-16 rounded bg-[#e5e5e5] dark:bg-zinc-800" />
+                        <div className="h-2.5 w-12 rounded bg-muted" />
+                        <div className="h-4 w-16 rounded bg-muted" />
                       </div>
                       <div className="space-y-1.5">
-                        <div className="h-2.5 w-14 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
-                        <div className="h-4 w-16 rounded bg-[#e5e5e5] dark:bg-zinc-800" />
+                        <div className="h-2.5 w-14 rounded bg-muted" />
+                        <div className="h-4 w-16 rounded bg-muted" />
                       </div>
                       <div className="space-y-1.5">
-                        <div className="h-2.5 w-16 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
-                        <div className="h-4 w-14 rounded bg-[#e5e5e5] dark:bg-zinc-800" />
+                        <div className="h-2.5 w-16 rounded bg-muted" />
+                        <div className="h-4 w-14 rounded bg-muted" />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-neutral-200 dark:border-border/60 flex items-center justify-between">
-                  <div className="h-3.5 w-44 rounded bg-[#e8e8e8] dark:bg-zinc-800" />
-                  <div className="h-8 w-28 rounded-lg bg-[#e8e8e8] dark:bg-zinc-800" />
+                <div className="mt-4.5 pt-3.5 sm:mt-5 sm:pt-4 border-t border-border/60 flex items-center justify-between">
+                  <div className="h-3.5 w-44 rounded bg-muted" />
+                  <div className="h-8 w-28 rounded-lg bg-muted" />
                 </div>
               </div>
 
-              <div className="relative flex min-h-[340px] sm:min-h-[380px] lg:min-h-0 h-full w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 dark:border-border bg-[#fafafa] dark:bg-zinc-900/60 p-6 shadow-xs animate-pulse">
+              <div className="relative flex min-h-[340px] sm:min-h-[380px] lg:min-h-0 h-full w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-xs animate-pulse">
                 <div className="relative flex items-center justify-center">
-                  <div className="size-36 rounded-full border border-neutral-300/80 dark:border-zinc-800 bg-[#f2f2f2]/70 dark:bg-zinc-800/30" />
-                  <div className="absolute size-20 rounded-full border border-neutral-300 dark:border-zinc-700 bg-[#e8e8e8] dark:bg-zinc-800/70" />
-                  <div className="absolute size-8 rounded-full bg-[#d4d4d4] dark:bg-zinc-600" />
+                  <div className="size-36 rounded-full border border-border bg-muted/70" />
+                  <div className="absolute size-20 rounded-full border border-border bg-muted/80" />
+                  <div className="absolute size-8 rounded-full bg-muted-foreground/30" />
                 </div>
-                <div className="mt-5 h-3 w-28 rounded-full bg-[#e5e5e5] dark:bg-zinc-800" />
+                <div className="mt-5 h-3 w-28 rounded-full bg-muted" />
               </div>
             </div>
           </div>

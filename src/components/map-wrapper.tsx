@@ -29,10 +29,8 @@ export function MapWrapper({
   return (
     <div
       className={cn(
-        "relative w-full h-full overflow-hidden transition-colors",
-        isGlobe
-          ? "rounded-2xl border border-border/70 bg-white dark:bg-card shadow-xs"
-          : "rounded-2xl border border-border/70 bg-muted/20 shadow-xs",
+        "relative w-full h-full overflow-hidden rounded-2xl border border-border/70 shadow-xs",
+        isGlobe ? "bg-card" : "bg-muted/20",
         className,
       )}
     >

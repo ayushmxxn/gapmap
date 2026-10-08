@@ -27,7 +27,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!point) return null;
 
   return (
-    <div className="rounded-lg border border-border/70 bg-white dark:bg-card px-2.5 py-1.5 shadow-xs text-xs">
+    <div className="rounded-lg border border-border/70 bg-card px-2.5 py-1.5 shadow-xs text-xs">
       <p className="text-[11px] text-muted-foreground">{point.date}</p>
       <p className="font-semibold text-foreground mt-0.5">
         {point.value} <span className="font-normal text-muted-foreground text-[10px]">/ 100 index</span>
@@ -109,7 +109,7 @@ export function TrendChart({ trend }: { trend: ScanResult["trend"] }) {
         )}
       </div>
 
-      <div className="h-40 w-full rounded-xl border border-border/60 bg-white dark:bg-card p-3 shadow-2xs">
+      <div className="h-40 w-full rounded-xl border border-border/60 bg-card p-3 shadow-2xs">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={trend.points}

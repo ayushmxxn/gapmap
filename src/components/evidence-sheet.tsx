@@ -139,7 +139,7 @@ export function EvidenceSheet({
           </section>
 
           <section className="border-t border-border/40 pt-6">
-            <details className="group rounded-xl bg-[#f2f2f2] dark:bg-muted/50 p-4 transition-all">
+            <details className="group rounded-xl bg-muted/50 p-4">
               <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
                 <span className="text-xs font-semibold">How we scored it</span>
                 <HugeiconsIcon
@@ -195,7 +195,7 @@ export function EvidenceSheet({
           </section>
 
           <section className="pt-3">
-            <details className="group rounded-xl bg-[#f2f2f2] dark:bg-muted/50 p-4 transition-all">
+            <details className="group rounded-xl bg-muted/50 p-4">
               <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
                 <span className="text-xs font-semibold">Technical details</span>
                 <HugeiconsIcon

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
 
 :root {
   --radius: 0.75rem;
@@ -101,13 +101,32 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    transition: background-color 0.3s ease, color 0.3s ease;
     overflow-x: hidden;
     max-width: 100%;
     min-height: 100vh;
     min-height: 100dvh;
     touch-action: manipulation;
   }
+}
+
+/* Synchronized theme color transition across the entire UI */
+html,
+body,
+*,
+*::before,
+*::after {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, box-shadow;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 200ms;
+}
+
+/* Exclude canvas and map rendering surfaces from CSS transitions */
+canvas,
+.mapboxgl-canvas,
+.mapboxgl-map,
+[data-motion],
+.no-theme-transition {
+  transition-property: none;
 }
 
 :focus,
@@ -120,7 +139,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
+  html,
+  body,
+  *,
+  ::before,
+  ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
