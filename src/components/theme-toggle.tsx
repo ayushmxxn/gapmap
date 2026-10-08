@@ -31,7 +31,7 @@ export function ThemeToggle() {
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={handleToggle}
       className={cn(
-        "group relative inline-flex h-[28px] w-[52px] shrink-0 cursor-pointer items-center rounded-full p-[2px] select-none outline-none transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.97] before:absolute before:-inset-2 before:content-['']",
+        "group relative inline-flex h-[28px] w-[52px] shrink-0 cursor-pointer items-center rounded-full p-[2px] select-none outline-none transition-colors duration-200 before:absolute before:-inset-2 before:content-['']",
         isDark
           ? "bg-[#151715] border border-white/[0.09] shadow-[inset_0_1.5px_3.5px_rgba(0,0,0,0.7),inset_0_0_0_1px_rgba(255,255,255,0.03)] hover:border-white/[0.15]"
           : "bg-[#ECECED] border border-black/[0.08] shadow-[inset_0_1px_2.5px_rgba(0,0,0,0.1),inset_0_0_0_1px_rgba(0,0,0,0.02)] hover:border-black/[0.14]",
@@ -72,8 +72,8 @@ export function ThemeToggle() {
       >
         <motion.span
           key={isDark ? "dark" : "light"}
-          initial={{ rotate: isDark ? -35 : 35, scale: 0.7, opacity: 0 }}
-          animate={{ rotate: 0, scale: 1, opacity: 1 }}
+          initial={{ rotate: isDark ? -35 : 35, opacity: 0 }}
+          animate={{ rotate: 0, opacity: 1 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="flex items-center justify-center"
         >
